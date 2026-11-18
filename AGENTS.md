@@ -21,8 +21,19 @@
   Without `--v2`, the v3 agent treats `/usage` as a prompt, explores the
   workspace, and burns credits without reporting the balance. (v2 returns
   the balance in ~4s and costs 0 credits.)
-- **pnpm** is installed globally (`/usr/bin/pnpm`); the store is at
-  `~/.local/share/pnpm/store`.
+- **pnpm** lives at `~/.local/bin/pnpm` (v10.34.9, installed with
+  `npm install -g --prefix ~/.local pnpm@10`); the store is at
+  `~/.local/share/pnpm/store`. `/usr/bin/pnpm` does NOT survive a runtime
+  restart (ephemeral) — if `pnpm` is missing, reinstall with the npm command
+  above (do NOT waste time hunting for it elsewhere). Use pnpm **10**, not
+  12: pnpm 12's default `minimum-release-age` policy rejects this lockfile
+  (several pinned versions were published within the last days). The repo
+  `.npmrc` sets `minimum-release-age=0` as a backstop. If `node_modules` is
+  wiped or broken, rebuild with `pnpm install --frozen-lockfile` (install
+  works in-repo; only `pnpm add` is broken).
+- **Kiro CLI sessions can get stuck** hunting for a missing binary or
+  re-running a failing check. If a session makes no log progress for ~10 min,
+  kill it and resume with the verified facts stated explicitly.
 
 ## Rules
 

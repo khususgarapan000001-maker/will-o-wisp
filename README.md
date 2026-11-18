@@ -66,8 +66,8 @@ Build order: auth-onboarding → encrypted-vault → heartbeat-grace-period →
 keeper-confirmation → last-letters → digital-will-checklist →
 echo-ai-drafting. Current state:
 
-- [ ] Day 1 (in progress): repo, specs, scaffolding, Supabase clients, auth pages
-- [ ] Spec 1: auth + onboarding
+- [x] Day 1: repo, specs, scaffolding (Next.js 15 + Tailwind v4 + shadcn/ui + Vitest + Playwright)
+- [ ] Spec 1: auth + onboarding (in progress)
 - [ ] Spec 3: heartbeat + grace period
 - [ ] Spec 4: keeper confirmation
 - [ ] Spec 5: last letters

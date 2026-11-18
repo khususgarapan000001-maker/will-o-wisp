@@ -140,7 +140,7 @@ user id of the vault owner. Timestamps are `timestamptz`, UTC.
 | `owner_id` | uuid FK → profiles, unique | |
 | `salt` | text | Base64; PBKDF2 salt for the vault key (see §5) |
 | `wrapped_dek` | text | Base64; data-encryption key wrapped by the passphrase-derived KEK |
-| `wrapped_dek_for_keepers` | jsonb | Per-keeper wrapped DEK (see §5.3); `[{keeper_id, wrapped_dek, kdf_salt}]` |
+| `wrapped_dek_for_keepers` | jsonb | Per-keeper wrapped DEK (see §5.3); `[{keeper_id, wrapped_dek, ephemeral_public_key, kdf_salt}]` — the ephemeral public key is the owner's one-time ECDH public key, which the keeper needs to derive the shared secret |
 | `recovery_hint` | text nullable | Owner-written hint, **never** the passphrase |
 | `created_at` / `updated_at` | timestamptz | |
 
@@ -210,12 +210,18 @@ user id of the vault owner. Timestamps are `timestamptz`, UTC.
 | `id` | uuid PK | |
 | `vault_id` | uuid FK → vaults | |
 | `kind` | text | `message` / `credential_pointer` / `instruction` / `letter` |
-| `title_ciphertext` | text | Base64 AES-GCM (see §5) |
-| `body_ciphertext` | text | Base64 AES-GCM |
+| `payload_ciphertext` | text | Base64 AES-GCM of the combined JSON payload `{title, body}` (see §5) |
 | `iv` | text | Base64, 12-byte random per item |
 | `recipient_keeper_id` | uuid FK → keepers, nullable | null = all keepers |
 | `sort_order` | int | |
 | `created_at` / `updated_at` | timestamptz | |
+
+> **Why one ciphertext column, not `title_ciphertext` + `body_ciphertext`?**
+> AES-GCM forbids reusing an IV under the same key. Two separate encryptions
+> would need two IVs (or a derived-IV scheme); the simpler correct design is
+> to encrypt `{title, body}` as a single JSON payload under one fresh IV.
+> The same question applies to `letters` (§4.9) — Spec 5 must resolve it the
+> same way (combined payload) or store per-field IVs.
 
 ### 4.9 `letters`
 | Column | Type | Notes |

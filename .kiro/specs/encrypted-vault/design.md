@@ -32,7 +32,8 @@ keeper access via ECDH is defined in §5.3.
 ## Data model (see design-doc §4.2, §4.8)
 
 - `vaults`: `salt`, `wrapped_dek`, `wrapped_dek_for_keepers`, `recovery_hint`.
-- `vault_items`: `kind`, `title_ciphertext`, `body_ciphertext`, `iv`,
+- `vault_items`: `kind`, `payload_ciphertext` (combined JSON `{title, body}`
+  encrypted under one IV — see design-doc §4.8 note on IV reuse), `iv`,
   `recipient_keeper_id`, `sort_order`.
 - RLS: owner full access to own vault/items; keepers read `vault_items` only
   after release (policy joins `release_processes` in state `released`).

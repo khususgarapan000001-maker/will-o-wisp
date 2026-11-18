@@ -8,8 +8,13 @@
  *
  * When a Supabase project is available:
  *   1. Set PLAYWRIGHT_BASE_URL, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
- *   2. Run `pnpm db:types` and `pnpm run scripts/seed-demo.ts`
+ *   2. Run `pnpm db:types` and `pnpm seed-demo`
  *   3. Remove the `test.skip` wrapper below and run `pnpm test:e2e`
+ *
+ * Assumptions in test 1 verified statically (18 Nov 2026, Spec 2 review):
+ *   - The "Your name" label exists in components/onboarding/StepA.tsx.
+ *   - Email confirmation OFF is still UNVERIFIED — confirm in the Supabase
+ *     project settings (Auth → providers → email) before un-skipping.
  */
 
 import { test, expect } from "@playwright/test";

@@ -3,20 +3,19 @@
 /**
  * Step (b) — Vault passphrase creation.
  *
- * UI and validation only. The actual crypto operations (PBKDF2 key derivation,
- * DEK generation, AES-KW wrapping) are implemented in the encrypted-vault spec
- * (Spec 2, lib/crypto/). This step records itself as "shown" so the dashboard
- * checklist can flag it as incomplete until Spec 2 is integrated.
+ * Full implementation wired to the real crypto vault creation flow (Spec 2):
+ *   1. Browser derives a KEK from the passphrase (PBKDF2-SHA-256, 600k iterations)
+ *   2. Generates a random DEK (AES-GCM 256)
+ *   3. Wraps the DEK with the KEK (AES-KW)
+ *   4. Sends only { salt, wrapped_dek } to the server via createVaultAction
  *
- * TODO(spec-2): When lib/crypto/{keys,encrypt,decrypt}.ts exist, replace the
- * placeholder `onComplete()` call below with the real vault-creation flow:
- *   1. deriveKek(passphrase, salt)
- *   2. generateDek()
- *   3. wrapDek(dek, kek)
- *   4. POST to /api/vault (or server action) to persist { salt, wrapped_dek }
+ * The passphrase, DEK, and KEK never leave the browser.
+ *
+ * If Supabase is not configured (missing env vars), shows a friendly notice
+ * and lets the user skip — consistent with other auth pages.
  */
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +24,12 @@ import {
   validatePassphraseConfirm,
   scorePassphrase,
 } from "@/lib/onboarding/validation";
+import { createVault } from "@/lib/crypto/session";
+import { createVaultAction } from "@/lib/vault/actions";
+
+const isConfigured =
+  typeof process.env.NEXT_PUBLIC_SUPABASE_URL === "string" &&
+  process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("https://");
 
 interface StepBProps {
   onComplete: () => void;
@@ -36,22 +41,55 @@ export function StepB({ onComplete, onSkip }: StepBProps) {
   const [confirm, setConfirm] = useState("");
   const [passphraseError, setPassphraseError] = useState<string | null>(null);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const strength = passphrase.length > 0 ? scorePassphrase(passphrase) : null;
 
+  if (!isConfigured) {
+    return (
+      <div className="flex flex-col gap-5">
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+          <p className="text-sm text-amber-200">
+            <strong>Supabase is not configured yet.</strong>{" "}
+            Add <code className="text-xs">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+            <code className="text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to your{" "}
+            <code className="text-xs">.env.local</code> to enable vault creation.
+          </p>
+        </div>
+        <Button variant="outline" type="button" onClick={onSkip}>
+          Skip for now
+        </Button>
+      </div>
+    );
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setServerError(null);
+
     const pResult = validatePassphrase(passphrase);
     const cResult = validatePassphraseConfirm(passphrase, confirm);
-
     setPassphraseError(pResult.error ?? null);
     setConfirmError(cResult.error ?? null);
-
     if (!pResult.valid || !cResult.valid) return;
 
-    // TODO(spec-2): run the real crypto vault creation here before calling onComplete.
-    // For now, record step as pending-vault and advance so the user can finish onboarding.
-    onComplete();
+    startTransition(async () => {
+      try {
+        // All crypto runs in the browser — passphrase never sent to server.
+        const { saltB64, wrappedDekB64 } = await createVault(passphrase);
+        // Send only the ciphertext and salt to the server.
+        const result = await createVaultAction({ saltB64, wrappedDekB64 });
+        if (result.error) {
+          setServerError(result.error);
+          return;
+        }
+        onComplete();
+      } catch (err) {
+        console.error("[StepB] vault creation error:", err);
+        setServerError("Could not create your vault. Please try again.");
+      }
+    });
   }
 
   return (
@@ -67,6 +105,12 @@ export function StepB({ onComplete, onSkip }: StepBProps) {
         </p>
       </div>
 
+      {serverError && (
+        <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {serverError}
+        </p>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="vault-passphrase">Vault passphrase</Label>
         <Input
@@ -77,6 +121,7 @@ export function StepB({ onComplete, onSkip }: StepBProps) {
           onChange={(e) => setPassphrase(e.target.value)}
           aria-invalid={!!passphraseError}
           aria-describedby={passphraseError ? "passphrase-error" : undefined}
+          disabled={isPending}
         />
         {passphraseError && (
           <p id="passphrase-error" className="text-sm text-destructive">
@@ -109,6 +154,7 @@ export function StepB({ onComplete, onSkip }: StepBProps) {
           onChange={(e) => setConfirm(e.target.value)}
           aria-invalid={!!confirmError}
           aria-describedby={confirmError ? "confirm-error" : undefined}
+          disabled={isPending}
         />
         {confirmError && (
           <p id="confirm-error" className="text-sm text-destructive">
@@ -118,11 +164,11 @@ export function StepB({ onComplete, onSkip }: StepBProps) {
       </div>
 
       <div className="flex gap-3">
-        <Button variant="outline" type="button" onClick={onSkip}>
+        <Button variant="outline" type="button" onClick={onSkip} disabled={isPending}>
           Skip for now
         </Button>
-        <Button type="submit" className="flex-1">
-          Set passphrase
+        <Button type="submit" className="flex-1" disabled={isPending}>
+          {isPending ? "Creating vault…" : "Set passphrase"}
         </Button>
       </div>
     </form>

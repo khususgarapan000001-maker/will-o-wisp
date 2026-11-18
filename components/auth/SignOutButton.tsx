@@ -3,19 +3,23 @@
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { signOutAction } from "@/lib/auth/actions";
+import { lockVault } from "@/lib/crypto/session";
 
 interface SignOutButtonProps {
   className?: string;
 }
 
 /**
- * Calls the sign-out server action and redirects to the home page.
- * In a future build: also clears in-memory vault keys from the crypto module.
+ * Clears the in-memory vault DEK, then calls the sign-out server action.
+ * The key clearing must happen here (client component) — the server action
+ * cannot reach browser memory.
  */
 export function SignOutButton({ className }: SignOutButtonProps) {
   const [isPending, startTransition] = useTransition();
 
   function handleSignOut() {
+    // Clear vault key material from memory BEFORE signing out (Spec 2 req §2.5).
+    lockVault();
     startTransition(async () => {
       await signOutAction();
     });

@@ -23,7 +23,7 @@
 - [x] 5. Onboarding wizard
   - [x] 5.1 Wizard shell with step state persisted server-side (resume on refresh)
   - [x] 5.2 Step (a): display name + timezone
-  - [ ] 5.3 Step (b): vault passphrase creation with strength meter — UI + validation done; crypto wiring BLOCKED on Spec 2 (encrypted-vault). The step is skippable; TODO(spec-2) comment in StepB.tsx marks the integration point.
+  - [x] 5.3 Step (b): vault passphrase creation with strength meter — fully wired to real crypto vault creation flow (Spec 2): browser derives KEK (PBKDF2-SHA-256, 600k iterations) → generates DEK → wraps DEK (AES-KW) → persists only {salt, wrapped_dek} via `createVaultAction`. Passphrase, DEK, KEK never leave the browser. "We cannot recover this passphrase" notice retained. Not-configured-Supabase state shows a friendly notice and allows skipping — consistent with other auth pages.
   - [x] 5.4 Step (c): heartbeat cadence + grace period (creates `heartbeat_settings` row); migration 20261118160000_heartbeat_settings.sql added
   - [x] 5.5 Step (d): invite 2 keepers (skippable explainer; full flow is Spec 4)
   - [x] 5.6 Step (e): write first letter (skippable explainer; editor is Spec 5)
@@ -31,5 +31,5 @@
 - [x] 6. Dashboard setup checklist (unfinished onboarding items)
 - [x] 7. Tests
   - [x] 7.1 Unit tests: wizard validation (tests/unit/onboarding-validation.test.ts — 37 tests); `get-user` already done
-  - [ ] 7.2 E2E: sign-up → onboarding → dashboard; wrong-password error; magic-link callback — BLOCKED (no live Supabase project); specs written in tests/e2e/auth-onboarding.spec.ts with test.describe.skip + explanation comment
+  - [ ] 7.2 E2E: sign-up → onboarding → dashboard; wrong-password error; magic-link callback — BLOCKED (no live Supabase project); specs written in tests/e2e/auth-onboarding.spec.ts with test.describe.skip + explanation comment. Test 1 assumptions checked statically (18 Nov 2026): "Your name" label exists in StepA; email-confirmation-OFF still unverified until a live project exists.
   - [x] 7.3 Run `pnpm lint && pnpm typecheck && pnpm test && pnpm build` — all green

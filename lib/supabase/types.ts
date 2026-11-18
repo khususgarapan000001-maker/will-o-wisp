@@ -17,6 +17,76 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      vaults: {
+        Row: {
+          id: string;
+          owner_id: string;
+          salt: string;
+          wrapped_dek: string;
+          wrapped_dek_for_keepers: Json;
+          recovery_hint: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          salt: string;
+          wrapped_dek: string;
+          wrapped_dek_for_keepers?: Json;
+          recovery_hint?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          salt?: string;
+          wrapped_dek?: string;
+          wrapped_dek_for_keepers?: Json;
+          recovery_hint?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      vault_items: {
+        Row: {
+          id: string;
+          vault_id: string;
+          kind: string;
+          // Combined JSON payload {title, body} encrypted under one IV (see migration).
+          payload_ciphertext: string;
+          iv: string;
+          recipient_keeper_id: string | null;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          vault_id: string;
+          kind: string;
+          payload_ciphertext: string;
+          iv: string;
+          recipient_keeper_id?: string | null;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          vault_id?: string;
+          kind?: string;
+          payload_ciphertext?: string;
+          iv?: string;
+          recipient_keeper_id?: string | null;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       heartbeat_settings: {
         Row: {
           id: string;

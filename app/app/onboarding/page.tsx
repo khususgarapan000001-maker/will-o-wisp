@@ -38,11 +38,18 @@ export default async function OnboardingPage() {
     .eq("owner_id", user.id)
     .maybeSingle();
 
+  // Check whether the vault row exists (Spec 2) — a user who set a passphrase
+  // and refreshed mid-onboarding must resume AFTER step (b), not repeat it.
+  const { data: vault } = await supabase
+    .from("vaults")
+    .select("id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
   const { currentStep } = deriveOnboardingState({
     onboardingCompletedAt: profile?.onboarding_completed_at ?? null,
     hasHeartbeatSettings: heartbeatSettings !== null,
-    // Vault check: always false until Spec 2 (encrypted-vault) is integrated.
-    hasVault: false,
+    hasVault: vault !== null,
   });
 
   return (

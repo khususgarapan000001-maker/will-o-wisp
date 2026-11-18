@@ -20,7 +20,7 @@ export interface OnboardingStateInput {
   hasHeartbeatSettings: boolean;
   /**
    * True when the vault row exists and has a wrapped_dek.
-   * Always false until Spec 2 (encrypted-vault) is implemented.
+   * Checked against the vaults table (Spec 2 integrated).
    */
   hasVault: boolean;
 }
@@ -83,7 +83,7 @@ export function getIncompleteSetupItems(input: OnboardingStateInput): SetupCheck
       id: "vault",
       label: "Set your vault passphrase",
       description: "Create the passphrase that encrypts your vault. We cannot recover it.",
-      href: "/app/onboarding",
+      href: "/app/vault",
     });
   }
 

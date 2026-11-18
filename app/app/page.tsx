@@ -39,10 +39,17 @@ export default async function DashboardPage() {
     .eq("owner_id", user.id)
     .maybeSingle();
 
+  // Check whether the vault passphrase has been set (Spec 2).
+  const { data: vault } = await supabase
+    .from("vaults")
+    .select("id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
   const incompleteItems = getIncompleteSetupItems({
     onboardingCompletedAt: profile.onboarding_completed_at,
     hasHeartbeatSettings: heartbeatSettings !== null,
-    hasVault: false, // TODO(spec-2): check vaults table once Spec 2 is integrated.
+    hasVault: vault !== null,
   });
 
   const displayName = profile.display_name ?? "there";

@@ -7,14 +7,14 @@
   - [ ] 1.1 Initialise Next.js 15 (App Router, TypeScript strict) + Tailwind + shadcn/ui; verify `pnpm dev` serves the starter page
   - [ ] 1.2 Add `.env.example` (Supabase URL, anon key, service key placeholder, Resend key placeholder); verify `.env.local` is gitignored
   - [ ] 1.3 Create Supabase project (free tier) and link it; run `pnpm db:types` to generate TS types
-- [ ] 2. Database migration: profiles + trigger
-  - [ ] 2.1 Migration `profiles` table + RLS (owner can read/update own row only)
-  - [ ] 2.2 Trigger: on `auth.users` insert, create `profiles` row
+- [x] 2. Database migration: profiles + trigger
+  - [x] 2.1 Migration `profiles` table + RLS (owner can read/update own row only)
+  - [x] 2.2 Trigger: on `auth.users` insert, create `profiles` row
   - [ ] 2.3 Verify: create a test user in the Supabase dashboard and confirm the profile row appears
-- [ ] 3. Supabase clients + route protection
-  - [ ] 3.1 `lib/supabase/client.ts` (browser) and `server.ts` (server + cookies)
-  - [ ] 3.2 `middleware.ts` protecting `/app/*` and `/keeper/*`; unauthenticated users redirect to `/auth/sign-in`
-  - [ ] 3.3 `lib/auth/get-user.ts` server helper
+- [x] 3. Supabase clients + route protection
+  - [x] 3.1 `lib/supabase/client.ts` (browser) and `server.ts` (server + cookies)
+  - [x] 3.2 `middleware.ts` protecting `/app/*` and `/keeper/*`; unauthenticated users redirect to `/auth/sign-in`
+  - [x] 3.3 `lib/auth/get-user.ts` server helper
 - [ ] 4. Auth pages
   - [ ] 4.1 Sign-up page (email + password, validation, Supabase sign-up call)
   - [ ] 4.2 Sign-in page + magic-link request

@@ -17,6 +17,45 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      heartbeat_settings: {
+        Row: {
+          id: string;
+          owner_id: string;
+          cadence_days: number;
+          grace_days: number;
+          reminder_days_before: number[];
+          next_checkin_due: string;
+          state: string;
+          state_changed_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          cadence_days?: number;
+          grace_days?: number;
+          reminder_days_before?: number[];
+          next_checkin_due: string;
+          state?: string;
+          state_changed_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          cadence_days?: number;
+          grace_days?: number;
+          reminder_days_before?: number[];
+          next_checkin_due?: string;
+          state?: string;
+          state_changed_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;

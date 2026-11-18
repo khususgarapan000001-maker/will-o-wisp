@@ -67,7 +67,8 @@ keeper-confirmation → last-letters → digital-will-checklist →
 echo-ai-drafting. Current state:
 
 - [x] Day 1: repo, specs, scaffolding (Next.js 15 + Tailwind v4 + shadcn/ui + Vitest + Playwright)
-- [ ] Spec 1: auth + onboarding (in progress)
+- [x] Spec 1: auth + onboarding — done except items blocked on a live Supabase project (task 2.3 dashboard verification, 7.2 live E2E run) and on Spec 2 (5.3 vault crypto wiring)
+- [ ] Spec 2: encrypted vault
 - [ ] Spec 3: heartbeat + grace period
 - [ ] Spec 4: keeper confirmation
 - [ ] Spec 5: last letters

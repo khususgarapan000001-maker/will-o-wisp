@@ -16,6 +16,11 @@
   switch back to `next/font/google`.
 - **Kiro CLI** lives at `~/.local/bin/kiro-cli` (not on PATH):
   `export PATH="$HOME/.local/bin:$PATH"`.
+- **Credit checks must use the v2 engine**: `kiro-cli chat --v2
+  --no-interactive --trust-all-tools --trust-workspace "/usage"`.
+  Without `--v2`, the v3 agent treats `/usage` as a prompt, explores the
+  workspace, and burns credits without reporting the balance. (v2 returns
+  the balance in ~4s and costs 0 credits.)
 - **pnpm** is installed globally (`/usr/bin/pnpm`); the store is at
   `~/.local/share/pnpm/store`.
 

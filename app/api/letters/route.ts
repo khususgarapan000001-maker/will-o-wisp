@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
     payload_ciphertext: v.payloadCiphertext,
     iv: v.iv,
     status: v.status,
+    ai_assisted: v.aiAssisted,
   });
   if (error) {
     console.error("[letters/create] Supabase error:", error.message);

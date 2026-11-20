@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EchoPanel } from "@/components/letters/EchoPanel";
 import { LetterCard } from "@/components/letters/LetterCard";
 import { sealLetter } from "@/lib/letters/seal";
 import {
@@ -66,6 +67,9 @@ export function LetterEditor({
   const [recipient, setRecipient] = useState(editing?.recipientKeeperId ?? keepers[0]?.id ?? "");
   const [status, setStatus] = useState<LetterStatus>(editing?.status ?? "draft");
   const [showPreview, setShowPreview] = useState(false);
+  // Sticky: once an Echo draft has been used, the letter stays AI-assisted.
+  const [usedEcho, setUsedEcho] = useState(false);
+  const aiAssisted = (editing?.aiAssisted ?? false) || usedEcho;
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -109,6 +113,7 @@ export function LetterEditor({
             payloadCiphertext: sealed.ciphertext,
             iv: sealed.iv,
             status,
+            aiAssisted,
           }),
         });
         if (!res.ok) {
@@ -191,14 +196,16 @@ export function LetterEditor({
             >
               {charCount.toLocaleString("en-US")} / {MAX_BODY_CHARS.toLocaleString("en-US")} characters
             </p>
-            {/* TODO(spec-7): Echo "help me draft" goes here. Deliberately a
-                disabled placeholder; it is not wired to anything yet. */}
-            <div>
-              <Button type="button" variant="outline" size="sm" disabled title="Coming soon">
-                Help me draft
-              </Button>
-              <span className="ml-2 text-xs text-muted-foreground">Coming soon</span>
-            </div>
+            <EchoPanel
+              recipientName={keepers.find((k) => k.id === recipient)?.name ?? ""}
+              disabled={isPending}
+              onDraft={(draft) => {
+                // Insert as ordinary editable text. If there is already text,
+                // add the draft below it rather than overwrite the owner's words.
+                setBody((prev) => (prev.trim() ? `${prev.trimEnd()}\n\n${draft}` : draft));
+                setUsedEcho(true);
+              }}
+            />
           </div>
 
           <fieldset className="flex flex-col gap-2">
@@ -242,7 +249,7 @@ export function LetterEditor({
                   writtenAt={editing?.writtenAt ?? new Date().toISOString()}
                   subject={subject.trim() || "Untitled"}
                   body={body}
-                  aiAssisted={editing?.aiAssisted ?? false}
+                  aiAssisted={aiAssisted}
                 />
               </div>
             )}

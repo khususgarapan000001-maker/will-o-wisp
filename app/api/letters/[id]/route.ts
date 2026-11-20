@@ -48,6 +48,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       payload_ciphertext: v.payloadCiphertext,
       iv: v.iv,
       status: v.status,
+      // Sticky: an Echo draft was used once, so the flag is only ever raised,
+      // never cleared by a later edit.
+      ...(v.aiAssisted ? { ai_assisted: true } : {}),
     })
     .eq("id", id)
     .eq("owner_id", user.id);

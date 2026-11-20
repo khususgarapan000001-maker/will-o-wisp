@@ -73,7 +73,7 @@ echo-ai-drafting. Current state:
 - [x] Spec 4: keeper confirmation — code + tests done; pending human steps: apply 4 migrations (`20261121090000`–`090300`), live E2E (see `.kiro/specs/keeper-confirmation/tasks.md`)
 - [x] Spec 5: last letters — code + tests done; pending human steps: apply 2 migrations (`20261121100000`, `20261121100100`), re-run `pnpm seed-demo`, live E2E (see `.kiro/specs/last-letters/tasks.md`)
 - [x] Spec 6: digital will checklist — code + tests done; pending human steps: apply 2 migrations (`20261121110000`, `20261121110100`), re-run `pnpm seed-demo`, live E2E (see `.kiro/specs/digital-will-checklist/tasks.md`)
-- [ ] Spec 7: Echo (AI-assisted drafting)
+- [x] Spec 7: Echo (AI-assisted drafting) — code + tests done; pending human steps: apply migration `20261121120000` (letter_delivered guard), choose/provide `OPENROUTER_API_KEY` (Echo is disabled without it; task 4.3 manual draft open), live E2E (see `.kiro/specs/echo-ai-drafting/tasks.md`)
 
 ## Privacy promise
 

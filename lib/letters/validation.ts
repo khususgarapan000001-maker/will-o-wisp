@@ -74,6 +74,8 @@ export interface LetterWriteInput {
   payloadCiphertext: string;
   iv: string;
   status: LetterStatus;
+  /** True when an Echo draft was used. Only ever raises the stored flag. */
+  aiAssisted: boolean;
 }
 
 export type WriteParse =
@@ -103,6 +105,13 @@ export function parseLetterWrite(body: unknown, idFromPath?: string): WriteParse
   }
   return {
     ok: true,
-    value: { id, recipientKeeperId: b.recipientKeeperId, payloadCiphertext: ct, iv, status: b.status },
+    value: {
+      id,
+      recipientKeeperId: b.recipientKeeperId,
+      payloadCiphertext: ct,
+      iv,
+      status: b.status,
+      aiAssisted: b.aiAssisted === true,
+    },
   };
 }

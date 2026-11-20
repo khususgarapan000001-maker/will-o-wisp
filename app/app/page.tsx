@@ -4,6 +4,13 @@ import { getUser } from "@/lib/auth/get-user";
 import { createClient } from "@/lib/supabase/server";
 import { getIncompleteSetupItems } from "@/lib/onboarding/state";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { LanternFlame } from "@/components/lantern/LanternFlame";
+import { CheckInButton } from "@/components/lantern/CheckInButton";
+import { LoginCheckInPrompt } from "@/components/lantern/LoginCheckInPrompt";
+import { DemoClockControl } from "@/components/lantern/DemoClockControl";
+import { loadHeartbeatView, demoAccountEmail } from "@/lib/heartbeat/service";
+import { formatDateLabel } from "@/lib/heartbeat/reminder-builder";
+import { DAY_MS } from "@/lib/heartbeat/cadence";
 
 /**
  * Dashboard — server component.
@@ -12,7 +19,12 @@ import { SignOutButton } from "@/components/auth/SignOutButton";
  * incomplete. The minimum requirement for "complete" is onboarding_completed_at
  * being set (steps a + c mandatory; b/d/e may be skipped).
  */
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ welcome?: string }>;
+}) {
+  const { welcome } = await searchParams;
   const user = await getUser();
 
   if (!user) {
@@ -53,7 +65,22 @@ export default async function DashboardPage() {
   });
 
   const displayName = profile.display_name ?? "there";
-  const heartbeatState = heartbeatSettings?.state ?? "ALIVE";
+  const loaded = await loadHeartbeatView(supabase, user.id);
+  const view = loaded.ok ? loaded.view : null;
+  const heartbeatState = view?.machine.state ?? "ALIVE";
+  const dueLabel = view
+    ? formatDateLabel(view.machine.nextCheckinDue, view.timeZone)
+    : "";
+  const maxReminderDays = Math.max(3, ...(view?.reminderDaysBefore ?? []));
+  const dueSoon =
+    view !== null &&
+    (heartbeatState !== "ALIVE" ||
+      view.machine.nextCheckinDue.getTime() - view.now.getTime() <=
+        maxReminderDays * DAY_MS);
+  const showLoginPrompt = welcome === "1" && view !== null && heartbeatState !== "RELEASED" && dueSoon;
+  const showDemoControl =
+    view?.demoMode === true &&
+    (user.email ?? "").toLowerCase() === demoAccountEmail(process.env);
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,10 +101,20 @@ export default async function DashboardPage() {
           Your lantern is burning.
         </p>
 
-        {/* Lantern placeholder */}
+        {/* Lantern */}
         <div className="mt-8 flex justify-center">
-          <LanternPlaceholder state={heartbeatState} />
+          <LanternFlame state={heartbeatState} />
         </div>
+
+        {showLoginPrompt && (
+          <LoginCheckInPrompt dueLabel={dueLabel} overdue={heartbeatState !== "ALIVE"} />
+        )}
+
+        {view && heartbeatState !== "RELEASED" && (
+          <div className="mt-6 flex justify-center">
+            <CheckInButton />
+          </div>
+        )}
 
         {/* Heartbeat status */}
         {heartbeatSettings && (
@@ -88,16 +125,16 @@ export default async function DashboardPage() {
             <p className="mt-1 text-lg font-semibold capitalize text-foreground">
               {heartbeatState.toLowerCase().replace("_", " ")}
             </p>
-            {heartbeatSettings.next_checkin_due && (
+            {view && (
               <p className="mt-1 text-sm text-muted-foreground">
-                Next check-in due{" "}
-                {new Date(heartbeatSettings.next_checkin_due).toLocaleDateString(
-                  undefined,
-                  { year: "numeric", month: "long", day: "numeric" }
-                )}
+                Next check-in due {dueLabel}
               </p>
             )}
           </div>
+        )}
+
+        {showDemoControl && view && (
+          <DemoClockControl offsetDays={Math.round(view.demoOffsetMs / DAY_MS)} />
         )}
 
         {/* Setup checklist — only shown when there are incomplete items */}
@@ -150,24 +187,5 @@ export default async function DashboardPage() {
         </nav>
       </main>
     </div>
-  );
-}
-
-function LanternPlaceholder({ state }: { state: string }) {
-  // Colour reflects heartbeat state.
-  // The animated LanternFlame SVG component comes in a later build.
-  const colorMap: Record<string, string> = {
-    ALIVE: "bg-amber-500/80 shadow-[0_0_40px_12px_rgba(245,158,11,0.35)]",
-    OVERDUE: "bg-orange-600/80 shadow-[0_0_40px_12px_rgba(234,88,12,0.35)]",
-    AWAITING_KEEPERS: "bg-orange-700/60 shadow-[0_0_40px_12px_rgba(194,65,12,0.3)]",
-    RELEASED: "bg-teal-400/60 shadow-[0_0_40px_12px_rgba(94,234,212,0.3)]",
-  };
-  const colorClass = colorMap[state] ?? colorMap["ALIVE"];
-
-  return (
-    <div
-      aria-label={`Lantern — ${state.toLowerCase()}`}
-      className={`h-24 w-16 rounded-full ${colorClass} transition-all duration-700`}
-    />
   );
 }

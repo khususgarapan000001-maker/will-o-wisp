@@ -3,6 +3,8 @@
 // `Database` without errors at build time.
 //
 // DO NOT hand-edit this file after a real project is linked — regenerate it.
+// NOTE: checkins / notifications / release_processes (Spec 3) were added by
+// hand because `pnpm db:types` needs a linked project. Regenerate once linked.
 
 export type Json =
   | string
@@ -121,6 +123,105 @@ export interface Database {
           next_checkin_due?: string;
           state?: string;
           state_changed_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      checkins: {
+        Row: {
+          id: string;
+          owner_id: string;
+          checked_in_at: string;
+          method: "button" | "login" | "magic_link";
+          ip_hash: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          checked_in_at?: string;
+          method: "button" | "login" | "magic_link";
+          ip_hash?: string | null;
+          created_at?: string;
+        };
+        // Append-only table: no update policy exists.
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          id: string;
+          owner_id: string;
+          kind: string;
+          due_date: string;
+          sent_at: string | null;
+          attempts: number;
+          read_at: string | null;
+          payload: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          kind: string;
+          due_date: string;
+          sent_at?: string | null;
+          attempts?: number;
+          read_at?: string | null;
+          payload?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          kind?: string;
+          due_date?: string;
+          sent_at?: string | null;
+          attempts?: number;
+          read_at?: string | null;
+          payload?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      release_processes: {
+        Row: {
+          id: string;
+          owner_id: string;
+          triggered_at: string;
+          state: "awaiting_keepers" | "released" | "cancelled_false_alarm" | "expired";
+          required_confirmations: number;
+          released_at: string | null;
+          cancelled_at: string | null;
+          cancel_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          triggered_at: string;
+          state?: "awaiting_keepers" | "released" | "cancelled_false_alarm" | "expired";
+          required_confirmations?: number;
+          released_at?: string | null;
+          cancelled_at?: string | null;
+          cancel_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          triggered_at?: string;
+          state?: "awaiting_keepers" | "released" | "cancelled_false_alarm" | "expired";
+          required_confirmations?: number;
+          released_at?: string | null;
+          cancelled_at?: string | null;
+          cancel_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };

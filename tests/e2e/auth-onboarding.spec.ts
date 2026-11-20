@@ -61,7 +61,7 @@ test.describe.skip("auth + onboarding — requires live Supabase project", () =>
     await page.getByRole("button", { name: "Skip for now" }).click();
 
     // Should reach dashboard
-    await expect(page).toHaveURL("/app");
+    await expect(page).toHaveURL(/\/app(\?welcome=1)?$/);
     await expect(page.getByRole("heading", { name: /Hello/i })).toBeVisible();
   });
 

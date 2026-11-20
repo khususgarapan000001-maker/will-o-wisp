@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
 
   const code = searchParams.get("code");
+  const tokenHash = searchParams.get("token_hash");
+  const otpType = searchParams.get("type");
   const errorParam = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
 
@@ -32,6 +34,31 @@ export async function GET(request: NextRequest) {
         "That link has expired or already been used. Please sign in again."
       )}`
     );
+  }
+
+  // Email-link flow used by heartbeat reminders: the Edge Function builds the
+  // link from an admin-generated magic-link token hash (no PKCE verifier exists
+  // for those), so verify it server-side. Only magic-link types are accepted.
+  if (tokenHash && (otpType === "magiclink" || otpType === "email")) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.auth.verifyOtp({
+        type: otpType,
+        token_hash: tokenHash,
+      });
+      if (error) {
+        console.error("[auth/callback] verifyOtp error:", error.message);
+        return NextResponse.redirect(
+          `${origin}/auth/sign-in?error=${encodeURIComponent(
+            "That link has expired or already been used. Please sign in again."
+          )}`
+        );
+      }
+      return NextResponse.redirect(`${origin}${destination}`);
+    } catch (err) {
+      console.error("[auth/callback] unexpected verifyOtp error:", err);
+      return NextResponse.redirect(`${origin}/auth/sign-in`);
+    }
   }
 
   if (!code) {

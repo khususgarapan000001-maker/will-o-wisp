@@ -32,7 +32,7 @@ test.describe.skip("vault — requires live Supabase project + seed-demo", () =>
     await page.getByLabel("Email").fill(DEMO_EMAIL);
     await page.getByLabel("Password").fill(DEMO_PASSWORD);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/app");
+    await expect(page).toHaveURL(/\/app(\?welcome=1)?$/);
   });
 
   // ---------------------------------------------------------------------------

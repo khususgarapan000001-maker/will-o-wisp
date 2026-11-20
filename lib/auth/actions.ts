@@ -108,7 +108,7 @@ export async function signInAction(
     const destination =
       redirectTo !== undefined && redirectTo.startsWith("/")
         ? redirectTo
-        : "/app";
+        : "/app?welcome=1";
     redirect(destination);
   } catch (err) {
     if (

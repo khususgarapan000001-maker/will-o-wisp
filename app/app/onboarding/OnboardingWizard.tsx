@@ -64,11 +64,11 @@ export function OnboardingWizard({
   const stepIndex = STEPS.findIndex((s) => s.key === currentStep);
   const stepMeta = STEPS[stepIndex];
 
-  async function handleComplete() {
-    const result = await completeOnboardingAction();
+  async function handleComplete(destination: "dashboard" | "letters" = "dashboard") {
+    const result = await completeOnboardingAction(destination);
     if (!result?.error) {
-      // completeOnboardingAction redirects to /app — this is a fallback.
-      router.push("/app");
+      // completeOnboardingAction redirects — this is a fallback.
+      router.push(destination === "letters" ? "/app/letters" : "/app");
     }
   }
 
@@ -135,7 +135,7 @@ export function OnboardingWizard({
           {currentStep === "e" && (
             <StepE
               onSkip={() => void handleComplete()}
-              onComplete={() => void handleComplete()}
+              onComplete={() => void handleComplete("letters")}
             />
           )}
         </CardContent>

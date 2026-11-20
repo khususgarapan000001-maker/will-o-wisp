@@ -15,8 +15,9 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
  * the decision completes a release, or cancels one, every party gets a calm
  * email (and the SQL function writes their in-app notices).
  *
- * Spec 5 hook: when the outcome is "released", last-letter delivery to the
- * keepers is triggered from here (after the commit) — letters do not exist yet.
+ * Spec 5: letters are marked delivered by a database trigger in the same
+ * transaction as the release; decideRelease() then sends the link-only
+ * "a letter was left for you" emails, only for the "released" outcome.
  */
 export async function POST(
   request: NextRequest,

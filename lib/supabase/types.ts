@@ -6,6 +6,7 @@
 // NOTE: checkins / notifications / release_processes (Spec 3) and keepers /
 // keeper_confirmations + the keeper functions (Spec 4) were added by hand
 // because `pnpm db:types` needs a linked project. Regenerate once linked.
+// letters + the letter-delivery functions (Spec 5) were also added by hand.
 
 export type Json =
   | string
@@ -19,6 +20,7 @@ export type Json =
 // Replace with the real generated output once `pnpm db:types` can run.
 export type KeeperStatus = "invited" | "accepted" | "declined" | "revoked";
 export type KeeperDecision = "confirm" | "false_alarm";
+export type LetterStatus = "draft" | "final";
 export type DecisionOutcome =
   | "recorded"
   | "released"
@@ -94,6 +96,50 @@ export interface Database {
           iv?: string;
           recipient_keeper_id?: string | null;
           sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      letters: {
+        Row: {
+          id: string;
+          owner_id: string;
+          vault_id: string;
+          recipient_keeper_id: string;
+          // Single JSON payload {subject, body} under ONE fresh IV (see migration).
+          payload_ciphertext: string;
+          iv: string;
+          ai_assisted: boolean;
+          status: LetterStatus;
+          // Set only by the release trigger; clients cannot write it.
+          delivered_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          vault_id: string;
+          recipient_keeper_id: string;
+          payload_ciphertext: string;
+          iv: string;
+          ai_assisted?: boolean;
+          status?: LetterStatus;
+          delivered_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          vault_id?: string;
+          recipient_keeper_id?: string;
+          payload_ciphertext?: string;
+          iv?: string;
+          ai_assisted?: boolean;
+          status?: LetterStatus;
+          delivered_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -400,6 +446,14 @@ export interface Database {
       release_party_emails: {
         Args: { p_release_id: string };
         Returns: { party_role: "owner" | "keeper"; party_name: string; party_email: string }[];
+      };
+      pending_letter_emails: {
+        Args: { p_release_id: string };
+        Returns: { keeper_id: string; keeper_name: string; keeper_email: string; letter_count: number }[];
+      };
+      record_letter_email_attempt: {
+        Args: { p_release_id: string; p_keeper_id: string; p_ok: boolean };
+        Returns: undefined;
       };
       notify_release_pending: {
         Args: { p_release_id: string };

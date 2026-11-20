@@ -11,6 +11,7 @@ import {
   buildFalseAlarmEmail,
   buildReleasedEmail,
 } from "@/lib/email/templates/keepers";
+import { sendLetterDeliveryEmails } from "@/lib/letters/deliver";
 
 type Db = SupabaseClient<Database>;
 
@@ -64,6 +65,17 @@ export async function decideRelease(
       ownerName: context.owner_name,
       kind: row.outcome,
       note,
+      appUrl,
+    });
+  }
+
+  // Spec 5: the database already marked the letters delivered and wrote the
+  // in-app notices in the same transaction as the release. Only a genuinely
+  // released outcome gets here: not recorded, cancelled or already_decided.
+  if (row.outcome === "released") {
+    await sendLetterDeliveryEmails(supabase, mailer, {
+      releaseId,
+      ownerName: context.owner_name,
       appUrl,
     });
   }

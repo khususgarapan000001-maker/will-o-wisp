@@ -25,10 +25,29 @@ does not expose the letter.
 
 ## Data model (see design-doc §4.9)
 
-- `letters`: `recipient_keeper_id`, `subject_ciphertext`,
-  `body_ciphertext`, `iv`, `ai_assisted`, `delivered_at`, plus a `status`
-  column (`draft` / `final`).
-- RLS: owner full access; recipient keeper read-only after release.
+- `letters`: `owner_id`, `vault_id`, `recipient_keeper_id` (NOT NULL, one
+  recipient per letter), a single `payload_ciphertext` + `iv`, `ai_assisted`,
+  `delivered_at`, plus a `status` column (`draft` / `final`).
+- **Deviation from design-doc §4.9 (IV correction).** The doc sketches
+  `subject_ciphertext` + `body_ciphertext` under ONE `iv`. That reuses an
+  AES-GCM IV across two ciphertexts. Letters instead encrypt one JSON payload
+  `{subject, body}` as ONE ciphertext under ONE fresh 96-bit IV, exactly like
+  `vault_items`. An edit re-encrypts the whole payload with a new IV.
+  AAD = `owner_id || letter_id`.
+- RLS: owner full access (delete only while undelivered); the recipient keeper
+  may SELECT only after delivery, while still `accepted`, with a `released`
+  release. Clients can never write `delivered_at` (`letters_guard`).
+- **Delivery is a database trigger** (`deliver_letters_on_release` on
+  `release_processes`, fired on the transition to `released`), not an edit to
+  `record_keeper_decision()`. It runs in the same transaction as the release,
+  re-checks the keeper is still `accepted`, delivers only `final` letters, and
+  is idempotent. It also writes one in-app notification per keeper
+  (`letter_delivered_<release id>`).
+- `lib/letters/deliver.ts` then sends the link-only email for each pending
+  notification and records the attempt; a failed send leaves `sent_at` null so
+  the next try picks it up (max 3 attempts).
+- The 50-letter cap and the 10,000-character limit are enforced in the editor
+  and `/api/letters`; the database does not count.
 
 ## Key decisions
 

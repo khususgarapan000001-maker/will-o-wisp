@@ -157,10 +157,11 @@ test.describe.skip("keepers — requires live Supabase + Spec 4 migrations + see
     await expect(p2.getByText(ITEM_TITLE)).toBeVisible({ timeout: 15_000 });
     await expect(p2.getByText("Everything is in the blue folder.")).toBeVisible();
 
-    // Letters are Spec 5: the route is honest that it isn't available yet.
+    // Letters (Spec 5): this scenario wrote none, so the page says so plainly.
+    // The letter flow itself is covered in letters.spec.ts.
     await p2.goBack();
     await p2.getByRole("link", { name: /Letters/ }).click();
-    await expect(p2.getByText(/isn't available yet/)).toBeVisible();
+    await expect(p2.getByText(/didn't leave a letter for you/)).toBeVisible();
 
     await k1.close();
     await k2.close();

@@ -114,7 +114,9 @@ export async function saveStepC(
 // Completion — set onboarding_completed_at and redirect to dashboard
 // ---------------------------------------------------------------------------
 
-export async function completeOnboardingAction(): Promise<{ error?: string }> {
+export async function completeOnboardingAction(
+  destination: "dashboard" | "letters" = "dashboard"
+): Promise<{ error?: string }> {
   const user = await getUser();
   if (!user) {
     return { error: "You must be signed in to continue." };
@@ -136,5 +138,6 @@ export async function completeOnboardingAction(): Promise<{ error?: string }> {
     return { error: "Could not complete onboarding. Please try again." };
   }
 
-  redirect("/app");
+  // Whitelisted destinations only: never redirect to a caller-supplied path.
+  redirect(destination === "letters" ? "/app/letters" : "/app");
 }

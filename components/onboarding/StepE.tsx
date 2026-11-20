@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 /**
  * Step (e) — Write your first letter (explainer + skip).
  *
- * The actual letter editor is Spec 5 (last-letters).
- * This step explains what letters are and allows skipping.
+ * The letter editor lives at /app/letters (Spec 5). This step explains what
+ * letters are; "Write my first letter" finishes onboarding and goes there,
+ * "Skip for now" finishes onboarding and goes to the dashboard.
  */
 interface StepEProps {
   onSkip: () => void;
@@ -53,10 +54,8 @@ export function StepE({ onSkip, onComplete }: StepEProps) {
         <Button variant="outline" type="button" onClick={onSkip} className="flex-1">
           Skip for now
         </Button>
-        {/* TODO(spec-5): once /app/letters exists, this button should finish
-            onboarding and navigate there instead of to the dashboard. */}
         <Button type="button" onClick={onComplete} className="flex-1">
-          Finish setup
+          Write my first letter
         </Button>
       </div>
     </div>

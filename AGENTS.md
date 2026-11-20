@@ -41,5 +41,11 @@
 - Never commit `.env.local` or real keys. Only `.env.example` (placeholders).
 - Quality gate before every commit: `pnpm lint && pnpm typecheck && pnpm test`
   green; `pnpm build` green before pushing a feature.
-- No live Supabase project exists yet — migrations are written but not
-  applied; `pnpm db:types` needs a linked project.
+- **Supabase project EXISTS** (19 Nov 2026, created by the user):
+  `will-o-wisp`, ref `hdkuhnwvufndcsikmdil`, Singapore (ap-southeast-1),
+  URL `https://hdkuhnwvufndcsikmdil.supabase.co`. `.env.local` is wired
+  (URL + publishable/anon key, verified live — auth health 200) and gitignored.
+  All 3 migrations APPLIED 19 Nov 2026 via the dashboard SQL Editor
+  (profiles, heartbeat_settings, vaults, vault_items — all 200 via REST).
+  `pnpm db:types` still needs a linked project (needs the DB password,
+  held by the user).

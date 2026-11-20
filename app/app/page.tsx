@@ -68,6 +68,13 @@ export default async function DashboardPage({
     hasVault: vault !== null,
   });
 
+  // Spec 6: accounts on the digital will that still have no wish.
+  const { count: unsetWishCount } = await supabase
+    .from("will_items")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", user.id)
+    .is("wish", null);
+
   const keeperSummary = await loadOwnerKeeperSummary(supabase, user.id);
   const keeperWarning = keeperMinimumWarning(keeperSummary.acceptedCount);
   const { data: noticeRows } = await supabase
@@ -173,6 +180,18 @@ export default async function DashboardPage({
         )}
 
         <Notices rows={noticeRows ?? []} audience="owner" />
+
+        {(unsetWishCount ?? 0) > 0 && (
+          <Link
+            href="/app/will"
+            className="mt-6 block rounded-xl border border-primary/40 bg-primary/10 p-4 text-sm text-foreground hover:bg-primary/15"
+          >
+            {unsetWishCount === 1
+              ? "1 account on your digital will has no wish yet."
+              : `${unsetWishCount} accounts on your digital will have no wish yet.`}{" "}
+            <span className="text-primary">Set a wish</span>
+          </Link>
+        )}
 
         {/* Setup checklist — only shown when there are incomplete items */}
         {incompleteItems.length > 0 && (

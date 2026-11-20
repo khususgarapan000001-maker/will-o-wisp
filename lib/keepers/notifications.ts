@@ -11,6 +11,7 @@ export const KEEPER_NOTICE_PREFIXES = [
   "released",
   "false_alarm",
   "letter_delivered",
+  "will_delivered",
 ] as const;
 export type KeeperNoticePrefix = (typeof KEEPER_NOTICE_PREFIXES)[number];
 
@@ -59,6 +60,11 @@ export function describeNotice(
       return {
         text: "A letter was left for you. Read it when you feel ready.",
         href: releaseId ? `/keeper/release/${releaseId}/letters` : "/keeper",
+      };
+    case "will_delivered":
+      return {
+        text: "A list of wishes for their accounts was left for you. Read it when you feel ready.",
+        href: releaseId ? `/keeper/release/${releaseId}/will` : "/keeper",
       };
     case "false_alarm":
       return {

@@ -72,7 +72,7 @@ echo-ai-drafting. Current state:
 - [x] Spec 3: heartbeat + grace period — code + tests done; pending human steps: apply 3 migrations, deploy `heartbeat-tick` + pg_cron, Resend key, live E2E (see `supabase/functions/heartbeat-tick/README.md`)
 - [x] Spec 4: keeper confirmation — code + tests done; pending human steps: apply 4 migrations (`20261121090000`–`090300`), live E2E (see `.kiro/specs/keeper-confirmation/tasks.md`)
 - [x] Spec 5: last letters — code + tests done; pending human steps: apply 2 migrations (`20261121100000`, `20261121100100`), re-run `pnpm seed-demo`, live E2E (see `.kiro/specs/last-letters/tasks.md`)
-- [ ] Spec 6: digital will checklist
+- [x] Spec 6: digital will checklist — code + tests done; pending human steps: apply 2 migrations (`20261121110000`, `20261121110100`), re-run `pnpm seed-demo`, live E2E (see `.kiro/specs/digital-will-checklist/tasks.md`)
 - [ ] Spec 7: Echo (AI-assisted drafting)
 
 ## Privacy promise

@@ -12,6 +12,7 @@ import {
   buildReleasedEmail,
 } from "@/lib/email/templates/keepers";
 import { sendLetterDeliveryEmails } from "@/lib/letters/deliver";
+import { sendWillDeliveryEmails } from "@/lib/will/deliver";
 
 type Db = SupabaseClient<Database>;
 
@@ -74,6 +75,13 @@ export async function decideRelease(
   // released outcome gets here: not recorded, cancelled or already_decided.
   if (row.outcome === "released") {
     await sendLetterDeliveryEmails(supabase, mailer, {
+      releaseId,
+      ownerName: context.owner_name,
+      appUrl,
+    });
+    // Spec 6: the same shape for the digital will (link-only email; the
+    // database trigger already wrote the in-app notices).
+    await sendWillDeliveryEmails(supabase, mailer, {
       releaseId,
       ownerName: context.owner_name,
       appUrl,

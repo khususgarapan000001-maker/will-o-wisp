@@ -7,6 +7,7 @@
 // keeper_confirmations + the keeper functions (Spec 4) were added by hand
 // because `pnpm db:types` needs a linked project. Regenerate once linked.
 // letters + the letter-delivery functions (Spec 5) were also added by hand.
+// will_items + the will-delivery functions (Spec 6) were also added by hand.
 
 export type Json =
   | string
@@ -21,6 +22,8 @@ export type Json =
 export type KeeperStatus = "invited" | "accepted" | "declined" | "revoked";
 export type KeeperDecision = "confirm" | "false_alarm";
 export type LetterStatus = "draft" | "final";
+export type WillWish = "delete" | "memorialize" | "transfer" | "archive" | "ignore";
+export type WillCategory = "social" | "finance" | "email" | "photos" | "work" | "other";
 export type DecisionOutcome =
   | "recorded"
   | "released"
@@ -140,6 +143,51 @@ export interface Database {
           ai_assisted?: boolean;
           status?: LetterStatus;
           delivered_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      will_items: {
+        Row: {
+          id: string;
+          owner_id: string;
+          // Plaintext by design (design-doc §5.4).
+          service_name: string;
+          category: WillCategory;
+          // NULL = no wish chosen yet.
+          wish: WillWish | null;
+          transfer_to_keeper_id: string | null;
+          // The only encrypted field; IV present iff notes present.
+          notes_ciphertext: string | null;
+          iv: string | null;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          service_name: string;
+          category?: WillCategory;
+          wish?: WillWish | null;
+          transfer_to_keeper_id?: string | null;
+          notes_ciphertext?: string | null;
+          iv?: string | null;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          service_name?: string;
+          category?: WillCategory;
+          wish?: WillWish | null;
+          transfer_to_keeper_id?: string | null;
+          notes_ciphertext?: string | null;
+          iv?: string | null;
+          sort_order?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -454,6 +502,18 @@ export interface Database {
       record_letter_email_attempt: {
         Args: { p_release_id: string; p_keeper_id: string; p_ok: boolean };
         Returns: undefined;
+      };
+      pending_will_emails: {
+        Args: { p_release_id: string };
+        Returns: { keeper_id: string; keeper_name: string; keeper_email: string }[];
+      };
+      record_will_email_attempt: {
+        Args: { p_release_id: string; p_keeper_id: string; p_ok: boolean };
+        Returns: undefined;
+      };
+      will_transfer_keepers: {
+        Args: { p_release_id: string };
+        Returns: { keeper_id: string; keeper_name: string; available: boolean }[];
       };
       notify_release_pending: {
         Args: { p_release_id: string };

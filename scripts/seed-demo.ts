@@ -24,6 +24,8 @@
  *   • keepers rows        (status accepted, public_key set)
  *   • vaults.wrapped_dek_for_keepers updated with both keeper-wrapped DEKs
  *   • 3 letters           (2 final — one AI-assisted — and 1 draft)
+ *   • 6 will items        (Spec 6: several wishes incl. 2 transfers to the demo
+ *                          keepers and 1 account with NO wish yet; 2 encrypted notes)
  *
  * Security note: the demo passphrase is published in Devpost's private field.
  * Never use the demo passphrase or keys for a real account.
@@ -458,6 +460,58 @@ async function main() {
     if (letterError) throw new Error(`Letter create failed: ${letterError.message}`);
   }
   console.log("  ✓ 3 letters created (2 final, 1 draft; 1 AI-assisted)");
+
+  // -------------------------------------------------------------------------
+  // 9c. Digital will (Spec 6): 6 accounts across categories. Service name,
+  //     category, wish and transfer target are plaintext by design; the note
+  //     (if any) is ONE ciphertext under ONE fresh IV (AAD = owner_id || item
+  //     id). One account has NO wish so the dashboard prompt is demoable.
+  // -------------------------------------------------------------------------
+  await supabase.from("will_items").delete().eq("owner_id", ownerId as string);
+
+  const willItems: {
+    name: string;
+    category: "social" | "finance" | "email" | "photos" | "work" | "other";
+    wish: "delete" | "memorialize" | "transfer" | "archive" | "ignore" | null;
+    transferTo: string | null;
+    note: string | null;
+  }[] = [
+    {
+      name: "Gmail",
+      category: "email",
+      wish: "transfer",
+      transferTo: keeperOne.keeperId,
+      note: "The recovery phone is the old Nokia in the desk drawer. Please keep this inbox open for a year: bills still arrive here.",
+    },
+    { name: "Instagram", category: "social", wish: "memorialize", transferTo: null, note: null },
+    {
+      name: "Google Photos",
+      category: "photos",
+      wish: "transfer",
+      transferTo: keeperTwo.keeperId,
+      note: "The family albums matter most. Please download them before anything else.",
+    },
+    { name: "Online banking", category: "finance", wish: null, transferTo: null, note: null },
+    { name: "LinkedIn", category: "work", wish: "archive", transferTo: null, note: null },
+    { name: "Netflix", category: "other", wish: "delete", transferTo: null, note: null },
+  ];
+  for (const [index, w] of willItems.entries()) {
+    const itemId = globalThis.crypto.randomUUID();
+    const enc = w.note ? await encryptItem(dek, ownerId as string, itemId, w.note) : null;
+    const { error: willError } = await supabase.from("will_items").insert({
+      id: itemId,
+      owner_id: ownerId as string,
+      service_name: w.name,
+      category: w.category,
+      wish: w.wish,
+      transfer_to_keeper_id: w.transferTo,
+      notes_ciphertext: enc?.ciphertext ?? null,
+      iv: enc?.iv ?? null,
+      sort_order: index,
+    });
+    if (willError) throw new Error(`Will item create failed: ${willError.message}`);
+  }
+  console.log("  ✓ 6 will items created (2 transfers, 1 with no wish yet; 2 encrypted notes)");
 
   // -------------------------------------------------------------------------
   // 10. Output demo credentials (for Devpost private field)

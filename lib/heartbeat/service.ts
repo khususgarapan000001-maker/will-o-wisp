@@ -24,9 +24,10 @@ import {
   type HeartbeatMachine,
   type HeartbeatState,
 } from "./state-machine.ts";
-import { createLogMailer } from "./mailer.ts";
-import { buildReminderForOwner } from "./reminder-builder.ts";
-import { processOwnerTick, type TickStore, type TickOutcome } from "./tick.ts";
+import { createLogMailer, createMailerFromEnv } from "./mailer.ts";
+import { buildReminderForOwner, formatDateLabel } from "./reminder-builder.ts";
+import { processOwnerTick, type TickStore, type TickOutcome, type TickOwner } from "./tick.ts";
+import { emailKeepersReleasePending } from "../keepers/release-notify.ts";
 
 type Db = SupabaseClient<Database>;
 export type CheckInMethod = "button" | "login" | "magic_link";
@@ -282,6 +283,55 @@ export class SupabaseTickStore implements TickStore {
 }
 
 // ---------------------------------------------------------------------------
+// Release opened: notify the accepted keepers (demo path; runs as the owner)
+// ---------------------------------------------------------------------------
+
+/**
+ * Emails each accepted keeper and writes their in-app notice. The owner's
+ * session may read their own keepers (RLS) and call notify_release_pending
+ * (which checks the caller owns the release). Spec 5 letters delivery is NOT
+ * triggered here; it happens when the release is confirmed.
+ */
+export function releaseOpenedNotifier(supabase: Db, appUrl: string) {
+  return async (owner: TickOwner): Promise<void> => {
+    const { data: release } = await supabase
+      .from("release_processes")
+      .select("id")
+      .eq("owner_id", owner.ownerId)
+      .eq("state", "awaiting_keepers")
+      .maybeSingle();
+    if (!release) return;
+
+    await supabase.rpc("notify_release_pending", { p_release_id: release.id });
+
+    const { data: keepers } = await supabase
+      .from("keepers")
+      .select("name, email")
+      .eq("owner_id", owner.ownerId)
+      .eq("status", "accepted");
+    if (!keepers || keepers.length === 0) return;
+
+    const { data: last } = await supabase
+      .from("checkins")
+      .select("checked_in_at")
+      .eq("owner_id", owner.ownerId)
+      .order("checked_in_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    await emailKeepersReleasePending({
+      mailer: createMailerFromEnv(process.env),
+      ownerName: owner.displayName,
+      lastCheckinLabel: last
+        ? formatDateLabel(new Date(last.checked_in_at), owner.machine.timeZone)
+        : null,
+      releaseUrl: `${appUrl.replace(/\/$/, "")}/keeper/release/${release.id}`,
+      keepers,
+    });
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Demo clock
 // ---------------------------------------------------------------------------
 
@@ -351,6 +401,7 @@ export async function advanceDemoClock(
         buildEmail: async (o, r) =>
           buildReminderForOwner(o, r, `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/app/checkin`),
         demoMode: true,
+        onReleaseOpened: releaseOpenedNotifier(supabase, process.env.NEXT_PUBLIC_APP_URL ?? ""),
       },
       realNow
     );

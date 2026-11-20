@@ -5,7 +5,7 @@
 
 - [ ] 1. Database migration: keepers + release_processes + keeper_confirmations
   - [ ] 1.1 Migration for `keepers` (invite token hash/expiry, public key, status) + RLS
-  - [ ] 1.2 Migration for `release_processes` + RLS
+  - [x] 1.2 Migration for `release_processes` + RLS
   - [ ] 1.3 Migration for `keeper_confirmations` + unique (release_id, keeper_id) + RLS
   - [ ] 1.4 Regenerate Supabase types
 - [ ] 2. Invite flow
@@ -28,7 +28,32 @@
   - [ ] 5.1 Dashboard warning when < 2 accepted keepers
   - [ ] 5.2 Release waits (cannot complete) when < 2 accepted keepers
 - [ ] 6. Tests
-  - [ ] 6.1 Unit: decision counting, token hash/expiry
-  - [ ] 6.2 PBT: keeper decisions in the event-sequence generator (no release without 2 confirms; false alarm cancels)
+  - [x] 6.1 Unit: decision counting, token hash/expiry
+  - [x] 6.2 PBT: keeper decisions in the event-sequence generator (no release without 2 confirms; false alarm cancels)
   - [ ] 6.3 E2E: full invite → accept → release → read letter; false-alarm path; double-decision blocked
-  - [ ] 6.4 Run `pnpm lint && pnpm typecheck && pnpm test` — all green
+  - [x] 6.4 Run `pnpm lint && pnpm typecheck && pnpm test` — all green
+
+## Status notes (build of 20 Nov 2026)
+
+Checked = covered by passing tests (`pnpm test`: unit + fast-check PBT). Left
+unchecked on purpose (built, compiles, `pnpm build` green, but not verifiable
+here):
+
+- 1.1 / 1.3: migrations written and syntax-checked with a Postgres parser, but
+  **not applied** (human step, SQL Editor, in order):
+  `20261121090000_keepers.sql`, `…090100_keeper_confirmations.sql`,
+  `…090200_heartbeat_state_guard.sql`, `…090300_keeper_vault_access.sql`.
+  1.2 was done in Spec 3; Spec 4 only adds the keeper SELECT policy on it.
+  The heartbeat guard rule is unit-tested through its TypeScript twin
+  (`lib/heartbeat/transition-rules.ts`), not against a database.
+- 1.4: `lib/supabase/types.ts` extended by hand (`pnpm db:types` needs a linked project).
+- 2.x, 3.2–3.5, 4.x, 5.x: UI, API routes and SQL functions are built; no
+  automated UI test, E2E skipped (needs live DB, seeded demo owner, DEMO_MODE).
+  Pure parts are tested: token hashing/expiry, invite validation, decision
+  counting, release status copy, notice mapping, wrap planning, email templates,
+  the release-opened hook, middleware path protection.
+- 3.1: the tick hook + email fan-out are unit-tested; the in-app rows come from
+  the SQL function `notify_release_pending` (untested without a DB).
+- 4.2 / 4.3: routes exist with honest empty states and TODO(spec-5) / TODO(spec-6).
+- 6.3: `tests/e2e/keepers.spec.ts` written (2 live scenarios skipped, 3 no-credential checks).
+- 6.4: lint, typecheck, test (199 passing) and build all green.

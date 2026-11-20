@@ -11,6 +11,11 @@ Cron Edge Function for the heartbeat / grace-period state machine
    (`UNIQUE (owner_id, kind, due_date)`), so each reminder goes out at most once;
    failed sends are retried on later ticks, at most 3 attempts.
 
+4. (Spec 4) when a release opens, calls `notify_release_pending()` (in-app
+   notice) and emails each accepted keeper. This needs the four Spec 4
+   migrations (`20261121090000`–`090300`) applied first; without them the
+   keeper lookup fails, is logged, and the state change still stands.
+
 A failure for one owner is logged and the tick continues with the next.
 The function imports `lib/heartbeat/*.ts` (the same code the Vitest and
 fast-check suites test) via relative paths.

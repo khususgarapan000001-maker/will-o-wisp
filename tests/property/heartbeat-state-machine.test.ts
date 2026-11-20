@@ -18,6 +18,7 @@ import {
   type HeartbeatState,
 } from "@/lib/heartbeat/state-machine";
 import { processOwnerTick, type TickOwner } from "@/lib/heartbeat/tick";
+import { applyKeeperDecision } from "@/lib/keepers/decision";
 import type { Mailer } from "@/lib/heartbeat/mailer";
 import { buildReminderForOwner } from "@/lib/heartbeat/reminder-builder";
 import { MemoryTickStore } from "../helpers/memory-store";
@@ -238,6 +239,107 @@ describe("PBT: heartbeat state machine", () => {
         m = nextState(m, { type: "KEEPER_CONFIRMED", keeperId: b }, farFuture).machine;
         expect(m.state).toBe("RELEASED");
       }),
+      { numRuns: NUM_RUNS }
+    );
+  });
+});
+
+describe("PBT: keeper decisions (Spec 4)", () => {
+  const decisionArb = fc.record({
+    keeperId: fc.constantFrom(...KEEPERS),
+    decision: fc.constantFrom<"confirm" | "false_alarm">("confirm", "confirm", "confirm", "false_alarm"),
+  });
+
+  /** A machine that has just opened a release (after grace). */
+  function awaitingMachine(cfg: { cadenceDays: number; graceDays: number; timeZone: string }) {
+    const m = initial(cfg);
+    const afterGrace = new Date(T0 + (cfg.cadenceDays + cfg.graceDays + 2) * DAY_MS);
+    const overdue = nextState(m, { type: "TICK" }, afterGrace).machine;
+    const open = nextState(overdue, { type: "TICK" }, afterGrace).machine;
+    expect(open.state).toBe("AWAITING_KEEPERS");
+    return { open, afterGrace };
+  }
+
+  it("no release without 2 distinct confirms; a false alarm always cancels", () => {
+    fc.assert(
+      fc.property(initialArb, fc.array(decisionArb, { minLength: 1, maxLength: 30 }), (cfg, decisions) => {
+        const { open, afterGrace } = awaitingMachine(cfg);
+        let m = open;
+        // Independent model of the persisted rows: one decision per keeper (the
+        // unique (release_id, keeper_id) constraint), release at >= 2 confirms,
+        // a false alarm closes the release.
+        const decided = new Map<string, "confirm" | "false_alarm">();
+        let modelState: "open" | "released" | "cancelled" = "open";
+
+        for (const { keeperId, decision } of decisions) {
+          const prev = m;
+          // The persistence layer (unique (release_id, keeper_id) + the release
+          // row lock) only forwards a decision to the machine if it is the
+          // keeper's first on a still-open release; anything else is rejected
+          // as "already_decided" / "not_open" and never reaches the machine.
+          const accepted = modelState === "open" && !decided.has(keeperId);
+          if (!accepted) continue;
+          decided.set(keeperId, decision);
+          if (decision === "false_alarm") modelState = "cancelled";
+          else if ([...decided.values()].filter((d) => d === "confirm").length >= 2) {
+            modelState = "released";
+          }
+          const t = applyKeeperDecision(m, keeperId, decision, afterGrace);
+          m = t.machine;
+
+          // No release without 2 distinct confirms.
+          if (m.state === "RELEASED") {
+            expect(new Set(m.confirmations).size).toBeGreaterThanOrEqual(2);
+            if (prev.state !== "RELEASED") expect(prev.state).toBe("AWAITING_KEEPERS");
+          }
+          // False alarm always cancels an open release.
+          if (decision === "false_alarm" && prev.state === "AWAITING_KEEPERS") {
+            expect(m.state).toBe("ALIVE");
+            expect(m.confirmations).toEqual([]);
+            expect(t.effects).toContainEqual({ type: "CANCEL_RELEASE", reason: "keeper_false_alarm" });
+          }
+        }
+
+        // The pure machine and the persistence model agree on the final outcome.
+        if (modelState === "released") expect(m.state).toBe("RELEASED");
+        if (modelState === "cancelled") expect(m.state).toBe("ALIVE");
+        if (modelState === "open") expect(m.state).toBe("AWAITING_KEEPERS");
+      }),
+      { numRuns: NUM_RUNS }
+    );
+  });
+
+  it("a single keeper, however many times they confirm, never releases", () => {
+    fc.assert(
+      fc.property(initialArb, fc.constantFrom(...KEEPERS), fc.integer({ min: 1, max: 20 }), (cfg, who, n) => {
+        const { open, afterGrace } = awaitingMachine(cfg);
+        let m = open;
+        for (let i = 0; i < n; i++) m = applyKeeperDecision(m, who, "confirm", afterGrace).machine;
+        expect(m.state).toBe("AWAITING_KEEPERS");
+        expect(m.confirmations).toEqual([who]);
+      }),
+      { numRuns: NUM_RUNS }
+    );
+  });
+
+  it("false alarm after any number of confirmations still cancels, then confirms are inert", () => {
+    fc.assert(
+      fc.property(
+        initialArb,
+        fc.array(fc.constantFrom(...KEEPERS), { maxLength: 1 }),
+        fc.constantFrom(...KEEPERS),
+        fc.array(fc.constantFrom(...KEEPERS), { maxLength: 6 }),
+        (cfg, before, alarmist, after) => {
+          const { open, afterGrace } = awaitingMachine(cfg);
+          let m = open;
+          for (const k of before) m = applyKeeperDecision(m, k, "confirm", afterGrace).machine;
+          m = applyKeeperDecision(m, alarmist, "false_alarm", afterGrace).machine;
+          expect(m.state).toBe("ALIVE");
+          for (const k of after) m = applyKeeperDecision(m, k, "confirm", afterGrace).machine;
+          expect(m.state).toBe("ALIVE");
+          expect(m.confirmations).toEqual([]);
+        }
+      ),
       { numRuns: NUM_RUNS }
     );
   });

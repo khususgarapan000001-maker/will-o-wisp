@@ -49,6 +49,12 @@ export interface TickDeps {
   /** Builds the email for a planned reminder; null = skip delivery (still recorded). */
   buildEmail: (owner: TickOwner, reminder: PlannedReminder) => Promise<EmailMessage | null>;
   demoMode: boolean;
+  /**
+   * Called after a release process is opened (Spec 4): email the accepted
+   * keepers and write their in-app notices. Failures are logged, never thrown,
+   * so a mail problem cannot undo the state change.
+   */
+  onReleaseOpened?: (owner: TickOwner, openedAt: Date) => Promise<void>;
 }
 
 export interface TickOutcome {
@@ -87,6 +93,16 @@ export async function processOwnerTick(
       if (effect.type === "OPEN_RELEASE") {
         await deps.store.openRelease(owner.ownerId, now, machine.requiredConfirmations);
         outcome.releaseOpened = true;
+        if (deps.onReleaseOpened) {
+          try {
+            await deps.onReleaseOpened(owner, now);
+          } catch (err) {
+            console.error(
+              "[tick] release notification failed:",
+              err instanceof Error ? err.message : "unknown error"
+            );
+          }
+        }
       }
     }
   }

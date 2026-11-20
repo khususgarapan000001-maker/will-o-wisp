@@ -28,6 +28,8 @@ import { createMailer } from "../../../lib/heartbeat/mailer.ts";
 import { buildReminderForOwner } from "../../../lib/heartbeat/reminder-builder.ts";
 import type { PlannedReminder } from "../../../lib/heartbeat/cadence.ts";
 import type { HeartbeatMachine } from "../../../lib/heartbeat/state-machine.ts";
+import { emailKeepersReleasePending } from "../../../lib/keepers/release-notify.ts";
+import { formatDateLabel } from "../../../lib/heartbeat/reminder-builder.ts";
 
 // deno-lint-ignore no-explicit-any
 type Tx = any; // postgres.TransactionSql — kept loose so the file needs no type install.
@@ -188,6 +190,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
               demoMode,
               buildEmail: async (o, reminder) =>
                 o.email ? buildReminderForOwner(o, reminder, await checkInUrl(o.email)) : null,
+              // Spec 4: tell the accepted keepers (email + in-app inbox row).
+              onReleaseOpened: async (o) => {
+                const [release] = await tx`
+                  select id from public.release_processes
+                   where owner_id = ${o.ownerId} and state = 'awaiting_keepers'`;
+                if (!release) return;
+                await tx`select public.notify_release_pending(${release.id}::uuid)`;
+                const keepers: { name: string; email: string }[] = await tx`
+                  select name, email from public.keepers
+                   where owner_id = ${o.ownerId} and status = 'accepted'`;
+                const [last] = await tx`
+                  select max(checked_in_at) as at from public.checkins where owner_id = ${o.ownerId}`;
+                await emailKeepersReleasePending({
+                  mailer,
+                  ownerName: o.displayName,
+                  lastCheckinLabel: last?.at ? formatDateLabel(new Date(last.at), o.machine.timeZone) : null,
+                  releaseUrl: `${appUrl}/keeper/release/${release.id}`,
+                  keepers,
+                });
+              },
             },
             now
           );

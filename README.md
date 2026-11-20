@@ -70,7 +70,7 @@ echo-ai-drafting. Current state:
 - [x] Spec 1: auth + onboarding — done except items blocked on a live Supabase project (task 2.3 dashboard verification, 7.2 live E2E run) and on Spec 2 (5.3 vault crypto wiring)
 - [ ] Spec 2: encrypted vault
 - [x] Spec 3: heartbeat + grace period — code + tests done; pending human steps: apply 3 migrations, deploy `heartbeat-tick` + pg_cron, Resend key, live E2E (see `supabase/functions/heartbeat-tick/README.md`)
-- [ ] Spec 4: keeper confirmation
+- [x] Spec 4: keeper confirmation — code + tests done; pending human steps: apply 4 migrations (`20261121090000`–`090300`), live E2E (see `.kiro/specs/keeper-confirmation/tasks.md`)
 - [ ] Spec 5: last letters
 - [ ] Spec 6: digital will checklist
 - [ ] Spec 7: Echo (AI-assisted drafting)

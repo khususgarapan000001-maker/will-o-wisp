@@ -319,7 +319,7 @@ async function main() {
   // -------------------------------------------------------------------------
   // 6. Create demo keeper account
   // -------------------------------------------------------------------------
-  const { error: keeperAuthError } =
+  const { data: keeperAuthData, error: keeperAuthError } =
     await supabase.auth.admin.createUser({
       email: DEMO_KEEPER_EMAIL,
       password: DEMO_KEEPER_PASSWORD,
@@ -329,6 +329,15 @@ async function main() {
   if (keeperAuthError && !keeperAuthError.message.includes("already been registered")) {
     throw new Error(`Keeper auth create failed: ${keeperAuthError.message}`);
   }
+  // keepers.auth_user_id (Spec 4) links the keeper row to their login. If the
+  // account already existed, look it up instead.
+  let keeperAuthUserId: string | null = keeperAuthData?.user?.id ?? null;
+  if (!keeperAuthUserId) {
+    const { data: list } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+    keeperAuthUserId =
+      list?.users.find((u) => u.email?.toLowerCase() === DEMO_KEEPER_EMAIL)?.id ?? null;
+  }
+  if (!keeperAuthUserId) throw new Error("Could not resolve the demo keeper's auth user id");
   console.log(`  ✓ Keeper account: ${DEMO_KEEPER_EMAIL}`);
 
   // -------------------------------------------------------------------------
@@ -358,14 +367,20 @@ async function main() {
     email: DEMO_KEEPER_EMAIL,
     relationship: "trusted person",
     status: "accepted",
+    auth_user_id: keeperAuthUserId,
     public_key: keeperPublicKeyB64,
   } as never);
+  // NOTE: a release needs 2 accepted keepers (requirement 17). This seed creates
+  // one; add a second the same way (or invite one through the app) before
+  // running the full release demo.
   console.log(`  ✓ Keeper row created (${keeperId})`);
 
   // -------------------------------------------------------------------------
   // 9. Wrap DEK for keeper and store in vaults.wrapped_dek_for_keepers
   // -------------------------------------------------------------------------
   const wrappedForKeeper = await wrapDekForKeeper(dek, keeperId, keeperPublicKeyB64);
+  // Same shape KeeperKeySync writes: remembers which key the DEK was wrapped for.
+  (wrappedForKeeper as Record<string, string>).keeper_public_key = keeperPublicKeyB64;
   await supabase
     .from("vaults")
     .update({ wrapped_dek_for_keepers: [wrappedForKeeper] })

@@ -9,6 +9,10 @@ import { CheckInButton } from "@/components/lantern/CheckInButton";
 import { LoginCheckInPrompt } from "@/components/lantern/LoginCheckInPrompt";
 import { DemoClockControl } from "@/components/lantern/DemoClockControl";
 import { loadHeartbeatView, demoAccountEmail } from "@/lib/heartbeat/service";
+import { loadOwnerKeeperSummary } from "@/lib/keepers/service";
+import { keeperMinimumWarning } from "@/lib/keepers/release-status";
+import { ReleaseTimeline } from "@/components/lantern/ReleaseTimeline";
+import { Notices } from "@/components/keepers/Notices";
 import { formatDateLabel } from "@/lib/heartbeat/reminder-builder";
 import { DAY_MS } from "@/lib/heartbeat/cadence";
 
@@ -63,6 +67,16 @@ export default async function DashboardPage({
     hasHeartbeatSettings: heartbeatSettings !== null,
     hasVault: vault !== null,
   });
+
+  const keeperSummary = await loadOwnerKeeperSummary(supabase, user.id);
+  const keeperWarning = keeperMinimumWarning(keeperSummary.acceptedCount);
+  const { data: noticeRows } = await supabase
+    .from("notifications")
+    .select("id, kind, payload, created_at")
+    .eq("owner_id", user.id)
+    .is("read_at", null)
+    .order("created_at", { ascending: false })
+    .limit(8);
 
   const displayName = profile.display_name ?? "there";
   const loaded = await loadHeartbeatView(supabase, user.id);
@@ -136,6 +150,29 @@ export default async function DashboardPage({
         {showDemoControl && view && (
           <DemoClockControl offsetDays={Math.round(view.demoOffsetMs / DAY_MS)} />
         )}
+
+        {keeperWarning && (
+          <Link
+            href="/app/keepers"
+            role="alert"
+            className="mt-6 block rounded-xl border border-primary/40 bg-primary/10 p-4 text-sm text-foreground hover:bg-primary/15"
+          >
+            {keeperWarning} <span className="text-primary">Invite a keeper</span>
+          </Link>
+        )}
+
+        {keeperSummary.release && keeperSummary.release.state === "awaiting_keepers" && (
+          <div className="mt-6">
+            <ReleaseTimeline
+              state={keeperSummary.release.state}
+              received={keeperSummary.release.received}
+              required={keeperSummary.release.required}
+              acceptedKeepers={keeperSummary.acceptedCount}
+            />
+          </div>
+        )}
+
+        <Notices rows={noticeRows ?? []} audience="owner" />
 
         {/* Setup checklist — only shown when there are incomplete items */}
         {incompleteItems.length > 0 && (

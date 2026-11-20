@@ -99,3 +99,14 @@ export function createMailer(env: MailerEnv, fetchImpl?: typeof fetch): Mailer {
   const from = env.RESEND_FROM_EMAIL?.trim() || "WILL-O'-WISP <onboarding@resend.dev>";
   return createResendMailer(key, from, fetchImpl);
 }
+
+/** `createMailer` from a plain env record (e.g. `process.env`). */
+export function createMailerFromEnv(
+  env: Record<string, string | undefined>,
+  fetchImpl?: typeof fetch
+): Mailer {
+  return createMailer(
+    { RESEND_API_KEY: env.RESEND_API_KEY, RESEND_FROM_EMAIL: env.RESEND_FROM_EMAIL },
+    fetchImpl
+  );
+}

@@ -13,6 +13,7 @@ import { useState, useCallback, useEffect, useTransition } from "react";
 import { VaultUnlock } from "@/components/vault/VaultUnlock";
 import { VaultItemCard } from "@/components/vault/VaultItemCard";
 import { VaultEditor } from "@/components/vault/VaultEditor";
+import { KeeperKeySync } from "@/components/keepers/KeeperKeySync";
 import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { isVaultUnlocked, getDek, lockVault } from "@/lib/crypto/session";
@@ -147,6 +148,11 @@ export function VaultClient({ ownerId, vaultId, saltB64, wrappedDekB64 }: VaultC
                   Add item
                 </Button>
               )}
+            </div>
+
+            {/* Spec 4: give newly accepted keepers their wrapped DEK (same unlock, no 2nd path). */}
+            <div className="mb-4">
+              <KeeperKeySync />
             </div>
 
             {loadError && (

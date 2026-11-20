@@ -1,15 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { isProtectedPath } from "@/lib/auth/protected-paths";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-
-/**
- * Routes that require an authenticated session.
- * Any request whose pathname starts with one of these prefixes will be
- * redirected to /auth/sign-in when no valid session exists.
- */
-const PROTECTED_PREFIXES = ["/app", "/keeper"];
 
 export async function middleware(request: NextRequest) {
   // Without a configured Supabase project there is no session to refresh and
@@ -53,9 +47,9 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix)
-  );
+  // /app/** and /keeper/** need a session, except the public invite page
+  // (see lib/auth/protected-paths.ts).
+  const isProtected = isProtectedPath(pathname);
 
   if (isProtected && !user) {
     const signInUrl = request.nextUrl.clone();

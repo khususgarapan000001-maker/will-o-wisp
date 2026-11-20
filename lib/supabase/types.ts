@@ -3,8 +3,9 @@
 // `Database` without errors at build time.
 //
 // DO NOT hand-edit this file after a real project is linked — regenerate it.
-// NOTE: checkins / notifications / release_processes (Spec 3) were added by
-// hand because `pnpm db:types` needs a linked project. Regenerate once linked.
+// NOTE: checkins / notifications / release_processes (Spec 3) and keepers /
+// keeper_confirmations + the keeper functions (Spec 4) were added by hand
+// because `pnpm db:types` needs a linked project. Regenerate once linked.
 
 export type Json =
   | string
@@ -16,6 +17,15 @@ export type Json =
 
 // Minimal placeholder matching Supabase's generated shape.
 // Replace with the real generated output once `pnpm db:types` can run.
+export type KeeperStatus = "invited" | "accepted" | "declined" | "revoked";
+export type KeeperDecision = "confirm" | "false_alarm";
+export type DecisionOutcome =
+  | "recorded"
+  | "released"
+  | "cancelled"
+  | "already_decided"
+  | "not_open";
+
 export interface Database {
   public: {
     Tables: {
@@ -227,6 +237,82 @@ export interface Database {
         };
         Relationships: [];
       };
+      keepers: {
+        Row: {
+          id: string;
+          owner_id: string;
+          auth_user_id: string | null;
+          name: string;
+          email: string;
+          relationship: string | null;
+          status: KeeperStatus;
+          invite_token_hash: string | null;
+          invite_expires_at: string | null;
+          invite_email_failed: boolean;
+          public_key: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          auth_user_id?: string | null;
+          name: string;
+          email: string;
+          relationship?: string | null;
+          status?: KeeperStatus;
+          invite_token_hash?: string | null;
+          invite_expires_at?: string | null;
+          invite_email_failed?: boolean;
+          public_key?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          auth_user_id?: string | null;
+          name?: string;
+          email?: string;
+          relationship?: string | null;
+          status?: KeeperStatus;
+          invite_token_hash?: string | null;
+          invite_expires_at?: string | null;
+          invite_email_failed?: boolean;
+          public_key?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      keeper_confirmations: {
+        Row: {
+          id: string;
+          release_id: string;
+          keeper_id: string;
+          decision: KeeperDecision;
+          confirmed_at: string;
+          note: string | null;
+        };
+        // Written only by record_keeper_decision(); no client insert policy.
+        Insert: {
+          id?: string;
+          release_id: string;
+          keeper_id: string;
+          decision: KeeperDecision;
+          confirmed_at?: string;
+          note?: string | null;
+        };
+        Update: {
+          id?: string;
+          release_id?: string;
+          keeper_id?: string;
+          decision?: KeeperDecision;
+          confirmed_at?: string;
+          note?: string | null;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           id: string;
@@ -262,7 +348,64 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_keeper_invite: {
+        Args: { p_token_hash: string };
+        Returns: {
+          keeper_id: string;
+          keeper_name: string;
+          keeper_email: string;
+          owner_name: string;
+          status: KeeperStatus;
+          expired: boolean;
+        }[];
+      };
+      accept_keeper_invite: {
+        Args: { p_token_hash: string; p_public_key: string };
+        Returns: string;
+      };
+      decline_keeper_invite: {
+        Args: { p_token_hash: string };
+        Returns: boolean;
+      };
+      record_keeper_decision: {
+        Args: {
+          p_release_id: string;
+          p_keeper_id: string;
+          p_decision: KeeperDecision;
+          p_note?: string | null;
+        };
+        Returns: {
+          outcome: DecisionOutcome;
+          release_state: "awaiting_keepers" | "released" | "cancelled_false_alarm" | "expired";
+          confirmations: number;
+          required_confirmations: number;
+        }[];
+      };
+      get_release_context: {
+        Args: { p_release_id: string };
+        Returns: {
+          owner_name: string;
+          keeper_id: string;
+          release_state: "awaiting_keepers" | "released" | "cancelled_false_alarm" | "expired";
+          triggered_at: string;
+          released_at: string | null;
+          required_confirmations: number;
+          confirmations: number;
+          my_decision: KeeperDecision | null;
+          last_checkin_at: string | null;
+          as_of: string;
+        }[];
+      };
+      release_party_emails: {
+        Args: { p_release_id: string };
+        Returns: { party_role: "owner" | "keeper"; party_name: string; party_email: string }[];
+      };
+      notify_release_pending: {
+        Args: { p_release_id: string };
+        Returns: number;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

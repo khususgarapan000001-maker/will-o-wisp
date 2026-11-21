@@ -47,5 +47,25 @@
   (URL + publishable/anon key, verified live — auth health 200) and gitignored.
   All 3 migrations APPLIED 19 Nov 2026 via the dashboard SQL Editor
   (profiles, heartbeat_settings, vaults, vault_items — all 200 via REST).
-  `pnpm db:types` still needs a linked project (needs the DB password,
+  The remaining 12 migrations (Specs 3–7) were APPLIED 21 Nov 2026 via the
+  SQL Editor (device browser) — all 7 new tables verified live via REST
+  (checkins, notifications, release_processes, keepers,
+  keeper_confirmations, letters, will_items). All 15 migrations are now
+  live. `pnpm db:types` still needs a linked project (needs the DB password,
   held by the user).
+- **Edge Function DEPLOYED** (21 Nov 2026, via the dashboard editor — NOT the
+  CLI: `supabase login` hangs on the build VM, TUI stalls after the
+  verification code is entered, no token is ever written). Function
+  `heartbeat-tick` is live at `/functions/v1/heartbeat-tick`, JWT
+  verification OFF (the function authenticates itself via
+  HEARTBEAT_CRON_SECRET), pg_cron + pg_net enabled, cron job `heartbeat-tick`
+  (jobid 1) runs every 15 min via a Vault secret. Manual test: HTTP 200,
+  `{"owners":0,"errors":0,"mailer":"log"}`. The deployed code is
+  `supabase/functions/heartbeat-tick/index.dashboard.ts` — same code as
+  `index.ts` except lib/ imports point at the raw GitHub URLs of the same
+  files (the dashboard editor cannot see the repo checkout); transitive
+  relative imports inside lib/ resolve against raw.githubusercontent.com.
+  The cron secret value lives OUTSIDE the repo at
+  `~/workspace/kiroween/.heartbeat-cron-secret` (0600) — never commit it,
+  never print it. If the function code changes, update BOTH index.ts and
+  index.dashboard.ts and re-deploy via the dashboard editor.

@@ -69,3 +69,12 @@
   `~/workspace/kiroween/.heartbeat-cron-secret` (0600) — never commit it,
   never print it. If the function code changes, update BOTH index.ts and
   index.dashboard.ts and re-deploy via the dashboard editor.
+- **Vercel DEPLOYED** (22 Nov 2026, 00:49 WIB): account created via GitHub
+  (khususgarapan000001-maker, Hobby/free), project `will-o-wisp` imports
+  this repo with auto-deploy from main. LIVE at
+  https://will-o-wisp.vercel.app (verified HTTP 200 + landing content).
+  Env vars set (Production + Preview): NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY, NEXT_PUBLIC_APP_URL (= the Vercel
+  domain), OPENROUTER_API_KEY (a NEW key the user created ~00:40 WIB —
+  different from the `will-o-wisp-echo` key in the vault, which is still
+  valid for Echo testing). Every push to main triggers a redeploy.

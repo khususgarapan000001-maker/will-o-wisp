@@ -19,8 +19,19 @@ export interface EchoEnv {
   OPENROUTER_MODEL?: string | undefined;
 }
 
-/** Free-tier default; override with OPENROUTER_MODEL as availability changes. */
-export const DEFAULT_OPENROUTER_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+/**
+ * Free-tier default, verified live 21 Nov 2026 (key "will-o-wisp-echo",
+ * OpenRouter free tier, 50 free requests/day). The previous default
+ * (meta-llama/llama-3.3-70b-instruct:free) is no longer free — OpenRouter
+ * returns 404 for it. Override with OPENROUTER_MODEL as availability
+ * changes; free models rotate and upstream shared pools rate-limit.
+ */
+export const DEFAULT_OPENROUTER_MODEL = "nvidia/nemotron-3.5-lightning:free";
+
+/** Token budget per draft. This model reasons (~1,500 tokens) before it
+ * writes, so 700 starves it to an empty reply; 2,000 leaves room for a
+ * ~300-char letter. Harmless for non-reasoning models (a cap, not a target). */
+const ECHO_MAX_TOKENS = 2000;
 
 export function createOpenRouterProvider(
   apiKey: string,
@@ -35,7 +46,7 @@ export function createOpenRouterProvider(
         res = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model, messages, max_tokens: 700, temperature: 0.7 }),
+          body: JSON.stringify({ model, messages, max_tokens: ECHO_MAX_TOKENS, temperature: 0.7 }),
           signal,
         });
       } catch (err) {

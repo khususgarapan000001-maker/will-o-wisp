@@ -230,6 +230,7 @@ async function main() {
     timezone: "Asia/Jakarta",
     // demo_time_offset: start at 0; the demo UI advances it.
     demo_time_offset: "0 seconds",
+    onboarding_completed_at: new Date().toISOString(),
   });
   console.log("  ✓ Profile updated");
 
@@ -348,6 +349,12 @@ async function main() {
       authUserId = list?.users.find((u) => u.email?.toLowerCase() === email)?.id ?? null;
     }
     if (!authUserId) throw new Error(`Could not resolve the auth user id for ${email}`);
+    await supabase.from("profiles").upsert({
+      id: authUserId,
+      display_name: name,
+      timezone: "Asia/Jakarta",
+      onboarding_completed_at: new Date().toISOString(),
+    });
 
     const pair = await SUBTLE.generateKey(
       { name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"]

@@ -98,7 +98,7 @@ async function advance(page: Page, label: "+1 day" | "+7 days" | "+14 days") {
   await expect(page.getByRole("status").filter({ hasText: "Time moved forward" })).toBeVisible();
 }
 
-test.describe.skip("will — requires live Supabase + Spec 6 migrations + seed-demo + DEMO_MODE", () => {
+test.describe("will — requires live Supabase + Spec 6 migrations + seed-demo + DEMO_MODE", () => {
   test.describe.configure({ mode: "serial" });
 
   test("add / edit / delete → transfer wish → release → keepers see the checklist, transfers highlighted, revoked target flagged", async ({
@@ -171,6 +171,7 @@ test.describe.skip("will — requires live Supabase + Spec 6 migrations + seed-d
       await p.goto("/keeper");
       await p.getByRole("link", { name: /Demo Owner/ }).click();
       await p.getByRole("button", { name: /Confirm — I can't reach them/ }).click();
+      await expect(p.getByText(/You've confirmed|The release was confirmed/).first()).toBeVisible();
       await p.close();
     }
 

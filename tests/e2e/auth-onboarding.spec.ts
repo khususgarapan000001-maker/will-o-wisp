@@ -22,7 +22,7 @@ import { test, expect } from "@playwright/test";
 // All cases are wrapped in test.skip until a live Supabase project exists.
 // The test file itself is valid TypeScript and the suite reports as skipped,
 // keeping `pnpm test:e2e` green (exit 0).
-test.describe.skip("auth + onboarding — requires live Supabase project", () => {
+test.describe("auth + onboarding — requires live Supabase project", () => {
   // -------------------------------------------------------------------------
   // 1. Full sign-up → onboarding → dashboard flow
   // -------------------------------------------------------------------------
@@ -37,31 +37,31 @@ test.describe.skip("auth + onboarding — requires live Supabase project", () =>
     await page.getByRole("button", { name: "Create account" }).click();
 
     // Should arrive at onboarding step (a)
-    await expect(page).toHaveURL("/app/onboarding");
-    await expect(page.getByRole("heading", { name: /Tell us about yourself/i })).toBeVisible();
+    await expect(page).toHaveURL("/app/onboarding", { timeout: 30_000 });
+    await expect(page.getByText("Tell us about yourself", { exact: true })).toBeVisible();
 
     // Step (a) — display name + timezone
     await page.getByLabel("Your name").fill("Test User");
     await page.getByRole("button", { name: "Continue" }).click();
 
     // Step (b) — passphrase (skip for this flow)
-    await expect(page.getByRole("heading", { name: /Secure your vault/i })).toBeVisible();
+    await expect(page.getByText("Secure your vault", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Skip for now" }).click();
 
     // Step (c) — heartbeat settings (use defaults)
-    await expect(page.getByRole("heading", { name: /Set your heartbeat/i })).toBeVisible();
+    await expect(page.getByText("Set your heartbeat", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Continue" }).click();
 
     // Step (d) — keepers (skip)
-    await expect(page.getByRole("heading", { name: /Choose your keepers/i })).toBeVisible();
+    await expect(page.getByText("Choose your keepers", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Skip for now" }).click();
 
     // Step (e) — first letter (skip)
-    await expect(page.getByRole("heading", { name: /Write your first letter/i })).toBeVisible();
+    await expect(page.getByText("Write your first letter", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Skip for now" }).click();
 
     // Should reach dashboard
-    await expect(page).toHaveURL(/\/app(\?welcome=1)?$/);
+    await expect(page).toHaveURL(/\/app(\?welcome=1)?$/, { timeout: 30_000 });
     await expect(page.getByRole("heading", { name: /Hello/i })).toBeVisible();
   });
 
@@ -78,7 +78,7 @@ test.describe.skip("auth + onboarding — requires live Supabase project", () =>
     await expect(page.getByText("Invalid login credentials")).not.toBeVisible();
     // A gentle user-facing message must appear.
     await expect(
-      page.getByRole("alert")
+      page.locator('p[role="alert"]')
     ).toContainText(/didn.t match|try again/i);
   });
 
@@ -91,11 +91,11 @@ test.describe.skip("auth + onboarding — requires live Supabase project", () =>
     await page.goto("/auth/sign-in");
     await page.getByRole("button", { name: /magic link/i }).click();
 
-    await page.getByLabel("Email").last().fill("demo@example.com");
+    await page.getByLabel("Email").last().fill(`magic+${Date.now()}@will-o-wisp.vercel.app`);
     await page.getByRole("button", { name: "Send magic link" }).click();
 
     // The page should show the "check your inbox" state.
-    await expect(page.getByRole("heading", { name: /Check your inbox/i })).toBeVisible();
+    await expect(page.getByText("Check your inbox", { exact: true })).toBeVisible({ timeout: 15_000 });
 
     // Simulating the callback itself requires extracting the OTP link from the
     // Supabase email logs (available via the Supabase admin API in test mode).

@@ -23,7 +23,7 @@ const DEMO_PASSWORD = "demo-pass-1234!";
 const DEMO_VAULT_PASSPHRASE = "demo-vault-passphrase-lantern-2026";
 const WRONG_PASSPHRASE = "definitely-the-wrong-passphrase";
 
-test.describe.skip("vault — requires live Supabase project + seed-demo", () => {
+test.describe("vault — requires live Supabase project + seed-demo", () => {
   // ---------------------------------------------------------------------------
   // Helper: sign in as the demo owner before each vault test.
   // ---------------------------------------------------------------------------
@@ -42,7 +42,7 @@ test.describe.skip("vault — requires live Supabase project + seed-demo", () =>
     await page.goto("/app/vault");
 
     // The unlock form must be visible.
-    await expect(page.getByRole("heading", { name: /Unlock your vault/i })).toBeVisible();
+    await expect(page.getByText("Unlock your vault", { exact: true })).toBeVisible();
 
     // No vault item titles, ciphertext, or metadata should be in the DOM.
     // (The page renders only the unlock card when locked — this is a

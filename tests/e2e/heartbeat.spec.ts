@@ -45,7 +45,7 @@ async function expectFlame(page: Page, state: string) {
   await expect(page.locator(`svg[data-flame-state="${state}"]`)).toBeVisible();
 }
 
-test.describe.skip("heartbeat — requires live Supabase + migrations + seed-demo + DEMO_MODE", () => {
+test.describe("heartbeat — requires live Supabase + migrations + seed-demo + DEMO_MODE", () => {
   test.describe.configure({ mode: "serial" });
 
   test.beforeEach(async ({ page }) => {

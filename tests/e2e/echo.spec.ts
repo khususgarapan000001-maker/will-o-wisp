@@ -15,7 +15,7 @@ const OWNER_EMAIL = "demo@will-o-wisp.example";
 const OWNER_PASSWORD = "demo-pass-1234!";
 const VAULT_PASSPHRASE = "demo-vault-passphrase-lantern-2026";
 
-test.describe.skip("Echo drafting", () => {
+test.describe("Echo drafting", () => {
   test("draft -> save -> letter is marked AI-assisted", async ({ page }) => {
     await page.route("**/api/echo/draft", async (route) => {
       if (route.request().method() === "GET") return route.fulfill({ json: { available: true } });
@@ -26,6 +26,7 @@ test.describe.skip("Echo drafting", () => {
     await page.getByLabel("Email").fill(OWNER_EMAIL);
     await page.getByLabel("Password").fill(OWNER_PASSWORD);
     await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page).toHaveURL(/\/app(\?welcome=1)?$/, { timeout: 30_000 });
     await page.goto("/app/letters");
     await page.getByLabel(/passphrase/i).fill(VAULT_PASSPHRASE);
     await page.getByRole("button", { name: /unlock/i }).click();
@@ -41,14 +42,22 @@ test.describe.skip("Echo drafting", () => {
     // Editing afterwards must not clear the flag.
     await page.getByLabel("Your letter").fill("Dear friend, thank you.");
     await page.getByRole("button", { name: /save letter/i }).click();
-    await expect(page.getByText("AI-assisted")).toBeVisible();
+    await expect(page.getByText("AI-assisted").first()).toBeVisible();
     // Keeper side: after release the badge "Drafted with AI assistance from the
     // owner's notes" renders in the keeper letters view (covered by the letters spec).
   });
 
   test("without a configured key Echo says so", async ({ page }) => {
     await page.route("**/api/echo/draft", (route) => route.fulfill({ json: { available: false } }));
+    await page.goto("/auth/sign-in");
+    await page.getByLabel("Email").fill(OWNER_EMAIL);
+    await page.getByLabel("Password").fill(OWNER_PASSWORD);
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page).toHaveURL(/\/app(\?welcome=1)?$/, { timeout: 30_000 });
     await page.goto("/app/letters");
+    await page.getByLabel(/passphrase/i).fill(VAULT_PASSPHRASE);
+    await page.getByRole("button", { name: /unlock/i }).click();
+    await page.getByRole("button", { name: /write a letter/i }).click();
     await page.getByRole("button", { name: "Help me draft" }).click();
     await expect(page.getByText("AI drafting isn't configured yet")).toBeVisible();
   });

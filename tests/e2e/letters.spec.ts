@@ -94,7 +94,7 @@ async function advance(page: Page, label: "+1 day" | "+7 days" | "+14 days") {
   await expect(page.getByRole("status").filter({ hasText: "Time moved forward" })).toBeVisible();
 }
 
-test.describe.skip("letters — requires live Supabase + Spec 5 migrations + seed-demo + DEMO_MODE", () => {
+test.describe("letters — requires live Supabase + Spec 5 migrations + seed-demo + DEMO_MODE", () => {
   test.describe.configure({ mode: "serial" });
 
   test("write → mark final → release → keeper reads; draft and removed-keeper letters are NOT delivered", async ({
@@ -148,6 +148,7 @@ test.describe.skip("letters — requires live Supabase + Spec 5 migrations + see
       await p.goto("/keeper");
       await p.getByRole("link", { name: /Demo Owner/ }).click();
       await p.getByRole("button", { name: /Confirm — I can't reach them/ }).click();
+      await expect(p.getByText(/You've confirmed|The release was confirmed/).first()).toBeVisible();
       await p.close();
     }
 
@@ -173,7 +174,10 @@ test.describe.skip("letters — requires live Supabase + Spec 5 migrations + see
     await page.getByLabel("Vault passphrase").fill(VAULT_PASSPHRASE);
     await page.getByRole("button", { name: "Unlock vault" }).click();
     await expect(page.getByText("Delivered")).toHaveCount(1);
-    await expect(page.getByText(/already been delivered and read/)).toBeVisible();
+    // The delivered letter is locked: its row offers no Edit/Delete.
+    const deliveredRow = page.getByRole("listitem").filter({ hasText: SUBJECT_A });
+    await expect(deliveredRow.getByRole("button", { name: "Edit" })).toHaveCount(0);
+    await expect(deliveredRow.getByRole("button", { name: "Delete" })).toHaveCount(0);
 
     for (const c of contexts) await c.close();
   });

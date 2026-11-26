@@ -123,7 +123,7 @@ async function openRelease(ctx: BrowserContext): Promise<Page> {
 
 // RELEASED is terminal, so each scenario below needs a freshly seeded demo
 // owner: run `pnpm seed-demo` between them (or run one with --grep).
-test.describe.skip("keepers — requires live Supabase + Spec 4 migrations + seed-demo + DEMO_MODE", () => {
+test.describe("keepers — requires live Supabase + Spec 4 migrations + seed-demo + DEMO_MODE", () => {
   test.describe.configure({ mode: "serial" });
 
   test("invite → accept → release pending → keeper 1 confirms → keeper 2 confirms → released; keeper reads the vault item; double decision blocked", async ({
@@ -155,7 +155,7 @@ test.describe.skip("keepers — requires live Supabase + Spec 4 migrations + see
     // The keeper reads the vault item, decrypted in their own browser.
     await p2.getByRole("link", { name: /Vault/ }).click();
     await expect(p2.getByText(ITEM_TITLE)).toBeVisible({ timeout: 15_000 });
-    await expect(p2.getByText("Everything is in the blue folder.")).toBeVisible();
+    await expect(p2.getByText("Everything is in the blue folder.").first()).toBeVisible();
 
     // Letters (Spec 5): this scenario wrote none, so the page says so plainly.
     // The letter flow itself is covered in letters.spec.ts.

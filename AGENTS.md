@@ -86,3 +86,8 @@
   domain), OPENROUTER_API_KEY (a NEW key the user created ~00:40 WIB —
   different from the `will-o-wisp-echo` key in the vault, which is still
   valid for Echo testing). Every push to main triggers a redeploy.
+
+## E2E (live, 26 Nov 2026)
+- All 7 Playwright specs pass against the live Supabase project (commit 79de2c9). Run with `--workers=1` (specs share one demo account) and `NODE_USE_ENV_PROXY=1`; local `.env.local` needs DEMO_MODE=true and no RESEND_API_KEY (invite returns devInviteLink).
+- Release scenarios end in RELEASED (terminal): run `node --env-file=.env.local scripts/e2e-reset.mjs` between scenarios — it clears keepers/letters/will/releases and recreates heartbeat_settings as ALIVE (delete+insert; UPDATE out of RELEASED is guard-blocked).
+- Keeper confirm clicks must wait for the "You've confirmed" UI before closing the page, or the decision never registers.

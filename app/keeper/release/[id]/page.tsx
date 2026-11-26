@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DecisionForm } from "@/components/keepers/DecisionForm";
 import { ReleaseTimeline } from "@/components/lantern/ReleaseTimeline";
 import { SignOutButton } from "@/components/auth/SignOutButton";
-import { formatElapsed } from "@/lib/keepers/release-status";
+import { formatElapsed, type ReleaseStateName } from "@/lib/keepers/release-status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -93,7 +93,7 @@ export default async function KeeperReleasePage({ params }: { params: Promise<{ 
         </Card>
 
         <ReleaseTimeline
-          state={context.release_state}
+          state={context.release_state as ReleaseStateName}
           received={context.confirmations}
           required={context.required_confirmations}
         />

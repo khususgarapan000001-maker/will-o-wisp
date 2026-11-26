@@ -58,7 +58,7 @@ export async function loadOwnerKeeperSummary(
     name: k.name,
     email: k.email,
     relationship: k.relationship,
-    status: k.status,
+    status: k.status as KeeperStatus,
     inviteExpiresAt: k.invite_expires_at,
     inviteEmailFailed: k.invite_email_failed,
     hasPublicKey: k.public_key !== null,

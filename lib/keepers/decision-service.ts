@@ -49,7 +49,7 @@ export async function decideRelease(
     p_release_id: releaseId,
     p_keeper_id: context.keeper_id,
     p_decision: decision,
-    p_note: note,
+    p_note: note ?? undefined,
   });
   if (error) {
     console.error("[releases/decide] rpc failed:", error.message);
@@ -90,7 +90,7 @@ export async function decideRelease(
 
   return {
     ok: true,
-    outcome: row.outcome,
+    outcome: row.outcome as DecisionOutcome,
     releaseState: row.release_state,
     confirmations: row.confirmations,
     required: row.required_confirmations,
@@ -114,7 +114,7 @@ async function emailParties(
     });
     const base = args.appUrl.replace(/\/$/, "");
     for (const p of parties ?? []) {
-      const audience = p.party_role;
+      const audience = p.party_role as "owner" | "keeper";
       const message =
         args.kind === "released"
           ? buildReleasedEmail({
